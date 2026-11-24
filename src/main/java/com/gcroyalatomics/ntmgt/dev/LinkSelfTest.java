@@ -50,6 +50,7 @@ public final class LinkSelfTest {
             }
             MoldSelfTest.run(event.getServer().overworld(), w);
             MeltSelfTest.run(w);
+            HazardSelfTest.run(w);
         } catch (IOException | RuntimeException e) {
             NtmGt.LOGGER.error("[ntmgt] selftest write failed", e);
         }
