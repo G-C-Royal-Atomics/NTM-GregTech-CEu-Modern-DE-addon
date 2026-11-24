@@ -56,6 +56,8 @@ val localMods = fileTree("libs") { include("*.jar") }
 dependencies {
     compileOnly(localMods)
     localRuntime(localMods)
+    // Optional: the rest of a real instance's mods (JEI, Sodium, ...), runtime only, to test against them.
+    localRuntime(fileTree("extra-mods") { include("*.jar") })
 }
 
 val modProps = mapOf(
