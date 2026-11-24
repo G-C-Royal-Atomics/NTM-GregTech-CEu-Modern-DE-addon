@@ -11,6 +11,10 @@ public final class NtmGt {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public NtmGt(IEventBus modBus) {
-        LOGGER.info("NTM: GregTech Integration loaded");
+        modBus.addListener(NtmGtMaterials::onPostMaterial);
+        if (Boolean.getBoolean("ntmgt.selftest")) {
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                    com.gcroyalatomics.ntmgt.dev.LinkSelfTest::onServerStarted);
+        }
     }
 }

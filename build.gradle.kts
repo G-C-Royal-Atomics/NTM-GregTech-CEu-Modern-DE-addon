@@ -27,7 +27,7 @@ neoForge {
 
     runs {
         create("client") { client() }
-        create("server") { server(); programArgument("--nogui") }
+        create("server") { server(); programArgument("--nogui"); systemProperty("ntmgt.selftest", "true") }
         configureEach {
             systemProperty("forge.logging.markers", "REGISTRIES")
             logLevel = org.slf4j.event.Level.INFO

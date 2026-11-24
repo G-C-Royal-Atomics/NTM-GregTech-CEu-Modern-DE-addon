@@ -33,3 +33,4 @@ libs/*
 .idea/
 *.iml
 out/
+notes/

@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.gcroyalatomics.ntmgt.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "FoundryCastingBaseBlockMixin",
+    "FoundryCastingBaseEntityMixin",
+    "StrandCasterBlockMixin",
+    "StrandCasterEntityMixin",
+    "StrandCasterMenuMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
