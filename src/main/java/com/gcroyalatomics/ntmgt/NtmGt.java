@@ -16,5 +16,9 @@ public final class NtmGt {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
                     com.gcroyalatomics.ntmgt.dev.LinkSelfTest::onServerStarted);
         }
+        if (Boolean.getBoolean("ntmgt.clienttest")) {
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                    com.gcroyalatomics.ntmgt.dev.ClientJoinTest::onClientTick);
+        }
     }
 }

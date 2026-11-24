@@ -27,6 +27,13 @@ neoForge {
 
     runs {
         create("client") { client() }
+        // Dev check before a jar goes into a real instance: joins run/saves/ntmgt-test, quits after 200 ticks.
+        create("clientTest") {
+            client()
+            systemProperty("ntmgt.clienttest", "true")
+            jvmArgument("-Xmx4g")
+            programArguments.addAll("--quickPlaySingleplayer", "ntmgt-test")
+        }
         create("server") { server(); programArgument("--nogui"); systemProperty("ntmgt.selftest", "true") }
         configureEach {
             systemProperty("forge.logging.markers", "REGISTRIES")
