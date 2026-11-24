@@ -48,6 +48,7 @@ public final class LinkSelfTest {
                 if (id.getNamespace().equals("gtceu")) w.write("gtitem\t" + id.getPath() + "\n");
             }
             MoldSelfTest.run(event.getServer().overworld(), w);
+            MeltSelfTest.run(w);
         } catch (IOException | RuntimeException e) {
             NtmGt.LOGGER.error("[ntmgt] selftest write failed", e);
         }
