@@ -46,6 +46,7 @@ public final class LinkSelfTest {
             for (Item item : BuiltInRegistries.ITEM) {
                 ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
                 if (id.getNamespace().equals("gtceu")) w.write("gtitem\t" + id.getPath() + "\n");
+                if (id.getNamespace().equals("ntmgt")) w.write("ntmgtitem\t" + id.getPath() + "\n");
             }
             MoldSelfTest.run(event.getServer().overworld(), w);
             MeltSelfTest.run(w);

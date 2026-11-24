@@ -1,6 +1,7 @@
 """Build src/main/resources/ntmgt/material_links.tsv: NTM item -> GT (prefix, material).
 
-Input: notes/ntm-tags.tsv (tools/ntm_tags.py) and notes/gt-materials.txt (GT material ids).
+Input: notes/ntm-tags.tsv (tools/ntm_tags.py), notes/gt-materials.txt (GT material ids) and the addon's own
+materials from NtmGtNewMaterials.java.
 Whether GT really has that form for the material is checked in game (NtmGtMaterials), not here.
 """
 import sys
@@ -19,9 +20,14 @@ SKIP = {  # tags whose item is not really that form/material in NTM
     "ingots/borax", "ingots/coltan", "ingots/malachite", "ingots/rare_earth", "ingots/redstone",
     "ingots/neodymium", "ingots/sodium", "ingots/strontium", "ingots/slag", "ingots/carbon",
     "ingots/latex", "dusts/coltan", "dusts/quartz", "storage_blocks/carbon", "storage_blocks/quartz",
+    # GT lists its own sodalite gem in neoforge:enchanting_fuels; with that item gone the whole tag fails to load
+    "gems/sodalite",
 }
 
 gt = set(open(sys.argv[2]).read().split())
+# NTM metals the addon registers as GT materials (ntmgt:<name>, NtmGtNewMaterials.NEW)
+import re
+gt |= set(re.findall(r'new Metal\("([a-z0-9_]+)"', open("src/main/java/com/gcroyalatomics/ntmgt/NtmGtNewMaterials.java").read()))
 rows, seen_item, seen_entry = [], set(), set()
 for line in open(sys.argv[1]):
     kind, form, mat, items = line.rstrip("\n").split("\t")

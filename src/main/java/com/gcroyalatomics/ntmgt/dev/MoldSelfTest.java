@@ -24,7 +24,7 @@ final class MoldSelfTest {
             "ingot", "nugget", "plate", "gear", "small_gear", "rotor",
             "tiny_pipe", "small_pipe", "normal_pipe", "large_pipe", "block", "huge_pipe"};
     private static final String[] MATS = {"steel", "iron", "copper", "aluminum", "titanium", "tungsten", "lead",
-            "uranium_238", "schrabidium", "stone"};
+            "uranium_238", "schrabidium", "stone", "dura_steel", "workers_alloy", "zirconium"};
 
     private MoldSelfTest() {}
 

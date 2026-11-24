@@ -53,8 +53,19 @@ val localRuntime: Configuration by configurations.creating
 configurations.runtimeClasspath { extendsFrom(localRuntime) }
 
 val localMods = fileTree("libs") { include("*.jar") }
+
+// GT ships Registrate (its material API needs it) jar-in-jar; compile against the bundled copy.
+val gtJarJar = tasks.register<Sync>("gtJarJar") {
+    from(localMods.filter { it.name.startsWith("gtceu-") }.elements.map { jars -> jars.map { zipTree(it) } }) {
+        include("META-INF/jarjar/Registrate-*.jar")
+        eachFile { path = name }
+    }
+    includeEmptyDirs = false
+    into(layout.buildDirectory.dir("gt-jarjar"))
+}
 dependencies {
     compileOnly(localMods)
+    compileOnly(fileTree(layout.buildDirectory.dir("gt-jarjar")).builtBy(gtJarJar))
     localRuntime(localMods)
     // Optional: the rest of a real instance's mods (JEI, Sodium, ...), runtime only, to test against them.
     localRuntime(fileTree("extra-mods") { include("*.jar") })

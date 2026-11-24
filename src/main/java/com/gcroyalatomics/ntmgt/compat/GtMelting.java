@@ -35,7 +35,8 @@ public final class GtMelting {
 
     public static List<Mats.MaterialStack> of(ItemStack stack) {
         Item item = stack.getItem();
-        if (!"gtceu".equals(BuiltInRegistries.ITEM.getKey(item).getNamespace())) return List.of();
+        String ns = BuiltInRegistries.ITEM.getKey(item).getNamespace();
+        if (!"gtceu".equals(ns) && !"ntmgt".equals(ns)) return List.of(); // GT's items and the addon's GT materials
 
         List<MaterialStack> parts;
         MaterialEntry entry = ChemicalHelper.getMaterialEntry(item);

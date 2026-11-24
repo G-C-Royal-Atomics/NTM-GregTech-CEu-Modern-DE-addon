@@ -11,6 +11,7 @@ public final class NtmGt {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public NtmGt(IEventBus modBus) {
+        NtmGtNewMaterials.register();
         modBus.addListener(NtmGtMaterials::onPostMaterial);
         if (Boolean.getBoolean("ntmgt.selftest")) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(

@@ -32,10 +32,11 @@ public final class NtmGtMaterials {
     private NtmGtMaterials() {}
 
     public static void onPostMaterial(PostMaterialEvent event) {
+        NtmGtNewMaterials.extendGtElements();
         int linked = 0, skipped = 0;
         for (String[] row : readTable()) {
             TagPrefix prefix = GTRegistries.TAG_PREFIXES.get(ResourceLocation.fromNamespaceAndPath("gtceu", row[0]));
-            Material material = GTRegistries.MATERIALS.get(ResourceLocation.fromNamespaceAndPath("gtceu", row[1]));
+            Material material = com.gcroyalatomics.ntmgt.compat.MaterialNames.gt(row[1]);
             ResourceLocation itemId = ResourceLocation.parse(row[2]);
             if (prefix == null || material == null) {
                 NtmGt.LOGGER.warn("[ntmgt] unknown GT prefix/material {} {} for {}", row[0], row[1], itemId);

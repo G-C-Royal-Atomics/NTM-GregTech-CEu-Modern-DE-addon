@@ -16,13 +16,16 @@ final class MeltSelfTest {
             "steel_screw", "steel_bolt", "steel_foil", "steel_ring", "steel_spring", "small_steel_spring",
             "steel_rotor", "steel_normal_fluid_pipe", "steel_frame", "lv_machine_hull", "lv_machine_casing",
             "iron_rod", "copper_foil", "titanium_gear", "aluminium_rod", "stainless_steel_rod", "lead_rotor",
-            "crushed_copper_ore", "copper_crushed_ore", "tungsten_steel_rod", "copper_single_wire"};
+            "crushed_copper_ore", "copper_crushed_ore", "tungsten_steel_rod", "copper_single_wire",
+            "ntmgt:dura_steel_rod", "ntmgt:schrabidium_gear", "ntmgt:workers_alloy_foil", "ntmgt:saturnite_frame",
+            "zirconium_rod", "polonium_plate", "cadmium_screw"};
 
     private MeltSelfTest() {}
 
     static void run(BufferedWriter w) throws IOException {
         for (String name : ITEMS) {
-            ResourceLocation id = ResourceLocation.fromNamespaceAndPath("gtceu", name);
+            ResourceLocation id = name.contains(":") ? ResourceLocation.parse(name)
+                    : ResourceLocation.fromNamespaceAndPath("gtceu", name);
             if (!BuiltInRegistries.ITEM.containsKey(id)) {
                 w.write("melt\t" + name + "\t(no such item)\n");
                 continue;
@@ -31,11 +34,12 @@ final class MeltSelfTest {
         }
         int melts = 0, total = 0;
         for (Item item : BuiltInRegistries.ITEM) {
-            if (!BuiltInRegistries.ITEM.getKey(item).getNamespace().equals("gtceu")) continue;
+            String ns = BuiltInRegistries.ITEM.getKey(item).getNamespace();
+            if (!ns.equals("gtceu") && !ns.equals("ntmgt")) continue;
             total++;
             if (!Mats.getSmeltingMaterialsFromItem(new ItemStack(item)).isEmpty()) melts++;
         }
-        w.write("melt-total\t" + melts + " of " + total + " gtceu items melt in the NTM crucible\n");
+        w.write("melt-total\t" + melts + " of " + total + " gtceu+ntmgt items melt in the NTM crucible\n");
     }
 
     private static String describe(ItemStack stack) {

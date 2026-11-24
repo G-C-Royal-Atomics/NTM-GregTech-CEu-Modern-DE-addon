@@ -1,1 +1,22 @@
-{}
+{
+  "material.ntmgt.arsenic_bronze": "Arsenic Bronze",
+  "material.ntmgt.bscco": "BSCCO",
+  "material.ntmgt.cd_alloy": "Cadmium Steel",
+  "material.ntmgt.cmbsteel": "Combine Steel",
+  "material.ntmgt.dineutronium": "Dineutronium",
+  "material.ntmgt.dura_steel": "High-Speed Steel",
+  "material.ntmgt.ferrouranium": "Ferrouranium",
+  "material.ntmgt.ghiorsium_336": "Ghiorsium-336",
+  "material.ntmgt.gun_metal": "Gunmetal",
+  "material.ntmgt.magnetized_tungsten": "Magnetized Tungsten",
+  "material.ntmgt.mingrade": "Minecraft Grade Copper",
+  "material.ntmgt.saturnite": "Saturnite",
+  "material.ntmgt.schrabidate": "Ferric Schrabidate",
+  "material.ntmgt.schrabidium": "Schrabidium",
+  "material.ntmgt.schraranium": "Schraranium",
+  "material.ntmgt.solinium": "Solinium",
+  "material.ntmgt.starmetal": "Starmetal",
+  "material.ntmgt.tc_alloy": "Technetium Steel",
+  "material.ntmgt.weapon_steel": "Weapon Steel",
+  "material.ntmgt.workers_alloy": "Desh"
+}

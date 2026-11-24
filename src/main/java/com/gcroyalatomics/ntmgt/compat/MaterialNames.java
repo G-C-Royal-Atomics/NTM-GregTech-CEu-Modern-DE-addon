@@ -11,7 +11,7 @@ import com.hbm.inventory.material.NTMMaterial;
 import java.util.HashMap;
 import java.util.Map;
 
-/** NTM material names (c: tag paths, NTMMaterial#tagPath) -> GT material ids. Same ALIAS as tools/gen_links.py. */
+/** NTM material names (c: tag paths, NTMMaterial#tagPath) -> GT materials (gtceu:, else ntmgt:). Same ALIAS as tools/gen_links.py. */
 public final class MaterialNames {
     private static final Map<String, String> ALIAS = Map.of(
             "aluminum", "aluminium",
@@ -39,6 +39,7 @@ public final class MaterialNames {
 
     public static @Nullable Material gt(String ntmTagPath) {
         String name = ALIAS.getOrDefault(ntmTagPath, ntmTagPath);
-        return GTRegistries.MATERIALS.get(ResourceLocation.fromNamespaceAndPath("gtceu", name));
+        Material m = GTRegistries.MATERIALS.get(ResourceLocation.fromNamespaceAndPath("gtceu", name));
+        return m != null ? m : GTRegistries.MATERIALS.get(ResourceLocation.fromNamespaceAndPath("ntmgt", name));
     }
 }
