@@ -174,6 +174,7 @@ public final class MoldStand {
         // strand caster: placed by the player, mold by click, GUI, GUI slot click, shift-click
         crucibleChain();
         jei();
+        formulas();
 
         step("caster: go", () -> goTo(CASTER_FLOOR.offset(0, 1, -4)), 5);
         step("caster: hold", () -> hold(new ItemStack(ModBlocks.MACHINE_STRAND_CASTER.get())), 5);
@@ -353,6 +354,31 @@ public final class MoldStand {
     }
 
     /** JEI: NTM's casting page has the GT molds' casts, its crucible page the GT parts' melting; both shown. */
+    /** Formula line (yellow, line 2) in real client tooltips: ours for NTM-only materials, GT's for linked items. */
+    private static void formulas() {
+        java.util.Map<String, String> expect = new java.util.LinkedHashMap<>();
+        expect.put("hbm:ingot_pc", "(C₁₆H₁₄O₃)ₙ");
+        expect.put("hbm:ingot_pu_mix", "(Pu²³⁹)₂Pu²⁴⁰");
+        expect.put("hbm:ingot_australium", "Aus");
+        expect.put("hbm:ingot_schrabidium", "Sa³²⁶");
+        expect.put("hbm:gem_sodalite", null);
+        step("formulas: tooltips", () -> {
+            var mc = Minecraft.getInstance();
+            for (var e : expect.entrySet()) {
+                var stack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(e.getKey())));
+                var lines = stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
+                        net.minecraft.world.item.TooltipFlag.Default.NORMAL);
+                String second = lines.size() > 1 ? lines.get(1).getString() : "";
+                long same = lines.stream().filter(l -> l.getString().equals(second)).count();
+                boolean yellow = lines.size() > 1 && lines.get(1).getStyle().getColor() != null
+                        && lines.get(1).getStyle().getColor().getValue() == 0xFFFF55;
+                boolean ok = e.getValue() == null ? !second.isEmpty() : second.equals(e.getValue());
+                check(ok && yellow && same == 1, "tooltip " + e.getKey() + ": line 2 '" + second + "' (yellow "
+                        + yellow + ", " + same + "x)");
+            }
+        }, 5);
+    }
+
     private static void jei() {
         ItemStack gearMold = new ItemStack(gtItem("gear_casting_mold"));
         ItemStack gear = new ItemStack(gtItem("steel_gear"));

@@ -6,6 +6,7 @@
   "mixins": [
     "CrucibleRecipesMixin",
     "CrucibleSmeltingPageMixin",
+    "FluidEntryAccessor",
     "FoundryCastingBaseBlockMixin",
     "FoundryCastingBaseEntityMixin",
     "HazardSystemMixin",

@@ -66,7 +66,8 @@ public final class NtmGtNewMaterials {
      * Chemical formulas (GT shows them under the item name) for the NTM metals. Alloys follow NTM's own recipes:
      * crucible ratios (dura steel = steel 40 : tungsten 24 : cobalt 8), rotary furnace (saturnite = 4 dura steel dust
      * + copper, gunmetal = 3 copper + aluminium), exposure chamber, desh mix; "?" = part of unknown composition,
-     * as in GT. Isotopes are written like GT's (U²³⁸): schrabidium / solinium are NTM's Sa-326 / Sa-327, dineutronium is GT's neutronium (Nt) doubled.
+     * as in GT. Isotopes are written like GT's (U²³⁸): schrabidium / solinium are NTM's Sa-326 / Sa-327, dineutronium is GT's neutronium (Nt) doubled;
+     * CMB steel = magnetized tungsten 2 : Watz mud 1 (NTM crucible), Watz mud = PbFe? as in NtmFormulas.
      */
     private static final Map<String, String> FORMULAS = Map.ofEntries(
             Map.entry("schrabidium", "Sa³²⁶"),
@@ -75,7 +76,7 @@ public final class NtmGtNewMaterials {
             Map.entry("schraranium", "USa"),
             Map.entry("schrabidate", "FeSa"),
             Map.entry("magnetized_tungsten", "W₉Sa"),
-            Map.entry("cmbsteel", "(W₉Sa)₂?"),
+            Map.entry("cmbsteel", "(W₉Sa)₂PbFe?"),
             Map.entry("dineutronium", "Nt₂"),
             Map.entry("workers_alloy", "B₂La₂CeCoLiNdNb"),
             Map.entry("dura_steel", "Fe₅W₃Co"),
