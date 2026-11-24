@@ -173,6 +173,7 @@ public final class MoldStand {
 
         // strand caster: placed by the player, mold by click, GUI, GUI slot click, shift-click
         crucibleChain();
+        jei();
 
         step("caster: go", () -> goTo(CASTER_FLOOR.offset(0, 1, -4)), 5);
         step("caster: hold", () -> hold(new ItemStack(ModBlocks.MACHINE_STRAND_CASTER.get())), 5);
@@ -349,6 +350,61 @@ public final class MoldStand {
             check(invCount(gear) == 1, "cast GT steel gear taken out by click");
             clearInventory();
         }, 2);
+    }
+
+    /** JEI: NTM's casting page has the GT molds' casts, its crucible page the GT parts' melting; both shown. */
+    private static void jei() {
+        ItemStack gearMold = new ItemStack(gtItem("gear_casting_mold"));
+        ItemStack gear = new ItemStack(gtItem("steel_gear"));
+        waitUntil("jei: runtime", () -> StandJeiPlugin.runtime != null, 20 * 60);
+        step("jei: casting", () -> {
+            var rt = StandJeiPlugin.runtime;
+            var type = new mezz.jei.api.recipe.RecipeType<>(com.hbm.integration.recipeviewer.RecipePages.CASTING.id(),
+                    com.hbm.integration.recipeviewer.CastingPage.Recipe.class);
+            var focus = rt.getJeiHelpers().getFocusFactory().createFocus(
+                    mezz.jei.api.recipe.RecipeIngredientRole.INPUT, mezz.jei.api.constants.VanillaTypes.ITEM_STACK, gearMold);
+            var rows = rt.getRecipeManager().createRecipeLookup(type).limitFocus(List.of(focus)).get().toList();
+            check(!rows.isEmpty() && rows.stream().anyMatch(r -> r.result().is(gear.getItem())),
+                    "JEI casting page: GT gear mold has " + rows.size() + " casts, steel gear among them");
+            rt.getRecipesGui().showRecipes(rt.getRecipeManager().getRecipeCategory(type), rows, List.of(focus));
+        }, 30);
+        step("jei: casting shot", () -> shot("jei-casting"), 5);
+        step("jei: smelting", () -> {
+            Minecraft.getInstance().setScreen(null);
+            var rt = StandJeiPlugin.runtime;
+            var type = new mezz.jei.api.recipe.RecipeType<>(
+                    com.hbm.integration.recipeviewer.RecipePages.CRUCIBLE_SMELTING.id(),
+                    com.hbm.integration.recipeviewer.CrucibleSmeltingPage.Recipe.class);
+            var focus = rt.getJeiHelpers().getFocusFactory().createFocus(
+                    mezz.jei.api.recipe.RecipeIngredientRole.INPUT, mezz.jei.api.constants.VanillaTypes.ITEM_STACK, gear);
+            var rows = rt.getRecipeManager().createRecipeLookup(type).limitFocus(List.of(focus)).get().toList();
+            long all = rt.getRecipeManager().createRecipeLookup(type).get().count();
+            check(rows.size() == 1, "JEI crucible page: GT steel gear melts (" + rows.size() + " rows; page has "
+                    + all + " rows)");
+            rt.getRecipesGui().showRecipes(rt.getRecipeManager().getRecipeCategory(type), rows, List.of(focus));
+        }, 30);
+        step("jei: smelting shot", () -> shot("jei-smelting"), 5);
+        step("jei: gt page", () -> {
+            Minecraft.getInstance().setScreen(null);
+            var rt = StandJeiPlugin.runtime;
+            var type = rt.getJeiHelpers().getRecipeType(ResourceLocation.fromNamespaceAndPath("gtceu", "macerator"));
+            check(type.isPresent(), "JEI has GT's macerator page");
+            if (type.isEmpty()) return;
+            var steel = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("hbm:ingot_steel")));
+            var focus = rt.getJeiHelpers().getFocusFactory().createFocus(
+                    mezz.jei.api.recipe.RecipeIngredientRole.INPUT, mezz.jei.api.constants.VanillaTypes.ITEM_STACK, steel);
+            long rows = rt.getRecipeManager().createRecipeLookup(type.get()).limitFocus(List.of(focus)).get().count();
+            check(rows > 0, "JEI GT macerator: NTM steel ingot is an input (" + rows + " rows)");
+            showPage(rt, type.get(), focus);
+        }, 30);
+        step("jei: gt page shot", () -> shot("jei-gt-macerator"), 5);
+        step("jei: close", () -> Minecraft.getInstance().setScreen(null), 5);
+    }
+
+    private static <T> void showPage(mezz.jei.api.runtime.IJeiRuntime rt, mezz.jei.api.recipe.RecipeType<T> type,
+                                     mezz.jei.api.recipe.IFocus<?> focus) {
+        List<T> rows = rt.getRecipeManager().createRecipeLookup(type).limitFocus(List.of(focus)).get().toList();
+        rt.getRecipesGui().showRecipes(rt.getRecipeManager().getRecipeCategory(type), rows, List.of(focus));
     }
 
     // ---------------------------------------------------------------- actions

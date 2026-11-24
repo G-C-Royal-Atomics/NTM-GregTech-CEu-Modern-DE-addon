@@ -4,6 +4,8 @@
   "package": "com.gcroyalatomics.ntmgt.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "CrucibleRecipesMixin",
+    "CrucibleSmeltingPageMixin",
     "FoundryCastingBaseBlockMixin",
     "FoundryCastingBaseEntityMixin",
     "HazardSystemMixin",

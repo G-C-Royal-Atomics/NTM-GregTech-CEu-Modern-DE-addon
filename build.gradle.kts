@@ -56,6 +56,10 @@ neoForge {
 // GTCEu Modern 8.0 SNAPSHOT, NTM: Decentralized Edition and their deps are not on a public maven yet:
 // the jars go into libs/ (see libs/README.md). Same jars are used for compiling and for runClient.
 // Runtime-only deps for dev runs, not exposed to consumers of this mod.
+repositories {
+    maven("https://maven.blamejared.com") { content { includeGroup("mezz.jei") } } // JEI API (NTM's recipe pages)
+}
+
 val localRuntime: Configuration by configurations.creating
 configurations.runtimeClasspath { extendsFrom(localRuntime) }
 
@@ -72,6 +76,8 @@ val gtJarJar = tasks.register<Sync>("gtJarJar") {
 }
 dependencies {
     compileOnly(localMods)
+    compileOnly("mezz.jei:jei-1.21.1-common-api:19.57.0.451")
+    compileOnly("mezz.jei:jei-1.21.1-neoforge-api:19.57.0.451")
     compileOnly(fileTree(layout.buildDirectory.dir("gt-jarjar")).builtBy(gtJarJar))
     localRuntime(localMods)
     // Optional: the rest of a real instance's mods (JEI, Sodium, ...), runtime only, to test against them.

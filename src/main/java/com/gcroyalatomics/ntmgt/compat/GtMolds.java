@@ -50,6 +50,11 @@ public final class GtMolds {
         return molds().get(stack.getItem());
     }
 
+    /** Every GT casting mold that works in NTM's foundry. */
+    public static java.util.Collection<GtMold> all() {
+        return molds().values();
+    }
+
     public static boolean is(ItemStack stack) {
         return of(stack) != null;
     }
@@ -91,6 +96,10 @@ public final class GtMolds {
             if (gt == null) return null;
             ItemStack out = ChemicalHelper.get(prefix, gt);
             return out.isEmpty() ? null : out;
+        }
+
+        public Item item() {
+            return item;
         }
 
         @Override
