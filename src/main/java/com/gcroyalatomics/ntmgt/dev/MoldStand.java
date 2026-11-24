@@ -484,14 +484,25 @@ public final class MoldStand {
                 net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
         check(got > 0, "GT universal cell takes NTM sulfuric acid: " + got + " mB");
         // NTM's canisters are filled by NTM's own loaders; a full one must hand its fluid to GT (cells slots, drums)
-        var full = com.hbm.capability.FluidContainerRows.filled(
-                new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("hbm:canister_empty"))), fluid("hbm:diesel"));
-        net.neoforged.neoforge.fluids.capability.IFluidHandlerItem fh = full.isEmpty() ? null : full.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
-        var drained = fh == null ? net.neoforged.neoforge.fluids.FluidStack.EMPTY : fh.drain(1000,
-                net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
-        check(drained.getFluid() == fluid("hbm:diesel") && drained.getAmount() > 0, "NTM diesel canister ("
-                + BuiltInRegistries.ITEM.getKey(full.getItem()) + ") gives GT " + drained.getAmount() + " mB of "
-                + BuiltInRegistries.FLUID.getKey(drained.getFluid()) + " (GT's diesel is NTM's now)");
+        // NTM's canister / gas tank, filled with a fluid GT shares, must hand it to GT (cell slots, drums)
+        var empties = new java.util.ArrayList<Item>();
+        com.hbm.capability.FluidContainerRows.forEachFamilyFill((empty, family) -> empties.add(empty));
+        for (String fid : List.of("hbm:diesel", "hbm:oxygen")) {
+            net.minecraft.world.level.material.Fluid want = fluid(fid);
+            ItemStack full = ItemStack.EMPTY;
+            for (Item e : empties) {
+                if (com.hbm.capability.FluidContainerRows.fillAmount(new ItemStack(e), want) <= 0) continue;
+                full = com.hbm.capability.FluidContainerRows.filled(new ItemStack(e), want);
+                break;
+            }
+            net.neoforged.neoforge.fluids.capability.IFluidHandlerItem fh = full.isEmpty() ? null
+                    : full.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
+            var drained = fh == null ? net.neoforged.neoforge.fluids.FluidStack.EMPTY : fh.drain(1000,
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+            check(!full.isEmpty() && drained.getFluid() == want && drained.getAmount() > 0, "NTM container ("
+                    + BuiltInRegistries.ITEM.getKey(full.getItem()) + ") with " + fid + " gives GT "
+                    + drained.getAmount() + " mB of " + BuiltInRegistries.FLUID.getKey(drained.getFluid()));
+        }
     }
 
     private static void waitTicks(int ticks) {
