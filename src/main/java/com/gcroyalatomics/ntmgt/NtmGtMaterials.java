@@ -33,6 +33,8 @@ public final class NtmGtMaterials {
 
     public static void onPostMaterial(PostMaterialEvent event) {
         NtmGtNewMaterials.extendGtElements();
+        NtmGtNewMaterials.setFormulas();
+        com.gcroyalatomics.ntmgt.compat.GtRadiationOff.apply();
         int linked = 0, skipped = 0;
         for (String[] row : readTable()) {
             TagPrefix prefix = GTRegistries.TAG_PREFIXES.get(ResourceLocation.fromNamespaceAndPath("gtceu", row[0]));

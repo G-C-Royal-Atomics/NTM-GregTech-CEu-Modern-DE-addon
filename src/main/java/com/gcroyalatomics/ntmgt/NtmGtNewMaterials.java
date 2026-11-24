@@ -14,6 +14,7 @@ import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags.*;
 
@@ -61,7 +62,48 @@ public final class NtmGtNewMaterials {
     /** GT element materials without solid forms that NTM has (only) dust of. */
     private static final List<String> GT_ELEMENTS_DUST = List.of("astatine", "strontium", "tennessine");
 
+    /**
+     * Chemical formulas (GT shows them under the item name) for the NTM metals. Alloys follow NTM's own recipes:
+     * crucible ratios (dura steel = steel 40 : tungsten 24 : cobalt 8), rotary furnace (saturnite = 4 dura steel dust
+     * + copper, gunmetal = 3 copper + aluminium), exposure chamber, desh mix; "?" = part of unknown composition,
+     * as in GT. Isotopes are written like GT's (U²³⁸): schrabidium / solinium are NTM's Sa-326 / Sa-327, dineutronium is GT's neutronium (Nt) doubled.
+     */
+    private static final Map<String, String> FORMULAS = Map.ofEntries(
+            Map.entry("schrabidium", "Sa³²⁶"),
+            Map.entry("solinium", "Sa³²⁷"),
+            Map.entry("ghiorsium_336", "Gh³³⁶"),
+            Map.entry("schraranium", "USa"),
+            Map.entry("schrabidate", "FeSa"),
+            Map.entry("magnetized_tungsten", "W₉Sa"),
+            Map.entry("cmbsteel", "(W₉Sa)₂?"),
+            Map.entry("dineutronium", "Nt₂"),
+            Map.entry("workers_alloy", "B₂La₂CeCoLiNdNb"),
+            Map.entry("dura_steel", "Fe₅W₃Co"),
+            Map.entry("saturnite", "(Fe₅W₃Co)₄Cu"),
+            Map.entry("starmetal", "((Fe₅W₃Co)₄Cu)Fe"),
+            Map.entry("ferrouranium", "Fe₂U"),
+            Map.entry("tc_alloy", "Fe₈Tc"),
+            Map.entry("cd_alloy", "Fe₈Cd"),
+            Map.entry("arsenic_bronze", "Cu₈As"),
+            Map.entry("bscco", "Bi₂Sr₂Ca₂Cu₃O₁₀"),
+            Map.entry("gun_metal", "Cu₃Al"),
+            Map.entry("weapon_steel", "FeC"));
+
     private NtmGtNewMaterials() {}
+
+    /** PostMaterialEvent: formulas of the NTM metals (red copper = copper + GT's redstone). */
+    static void setFormulas() {
+        FORMULAS.forEach((name, formula) -> {
+            Material m = GTRegistries.MATERIALS.get(ResourceLocation.fromNamespaceAndPath(NtmGt.MOD_ID, name));
+            if (m != null) m.setFormula(formula, false);
+        });
+        Material mingrade = GTRegistries.MATERIALS.get(ResourceLocation.fromNamespaceAndPath(NtmGt.MOD_ID, "mingrade"));
+        Material redstone = gt("redstone");
+        if (mingrade != null) {
+            String rs = redstone != null ? redstone.getChemicalFormula() : "";
+            mingrade.setFormula(rs == null || rs.isEmpty() ? "Cu?" : "Cu(" + rs + ")", false);
+        }
+    }
 
     /** Called from the mod constructor: queues the materials into GT's material registration. */
     static void register() {

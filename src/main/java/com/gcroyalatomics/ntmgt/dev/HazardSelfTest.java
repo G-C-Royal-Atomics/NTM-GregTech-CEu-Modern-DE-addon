@@ -31,6 +31,29 @@ final class HazardSelfTest {
             if (!BuiltInRegistries.ITEM.containsKey(id)) continue;
             w.write("hazard\t" + id + "\t" + describe(new ItemStack(BuiltInRegistries.ITEM.get(id))) + "\n");
         }
+        for (String name : new String[] {"hbm:ingot_steel", "hbm:ingot_u238", "hbm:plate_copper", "hbm:ingot_schrabidium",
+                "hbm:ingot_dura_steel", "hbm:ingot_desh", "hbm:ingot_saturnite", "hbm:ingot_red_copper",
+                "hbm:ingot_bscco", "hbm:ingot_zirconium", "ntmgt:schrabidium_gear", "uranium_238_rod"}) {
+            ResourceLocation id = name.contains(":") ? ResourceLocation.parse(name)
+                    : ResourceLocation.fromNamespaceAndPath("gtceu", name);
+            Item item = BuiltInRegistries.ITEM.get(id);
+            var entry = com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper.getMaterialEntry(item);
+            var gtHazard = com.gregtechceu.gtceu.api.data.chemical.material.properties.HazardProperty
+                    .getValidHazardMaterial(new ItemStack(item));
+            w.write("formula\t" + id + "\t" + (entry == null || entry.material() == null ? "(no GT material)"
+                    : entry.material().getResourceLocation() + " " + entry.material().getChemicalFormula())
+                    + "\tGT hazard: " + (gtHazard == null ? "-" : "yes") + "\n");
+        }
+        int gtRadioactive = 0;
+        for (var m : com.gregtechceu.gtceu.api.registry.GTRegistries.MATERIALS) {
+            var h = m.getProperty(com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey.HAZARD);
+            if (h != null && h.hazardTrigger == com.gregtechceu.gtceu.api.data.chemical.material.properties
+                    .HazardProperty.HazardTrigger.ANY) {
+                gtRadioactive++;
+                w.write("gt-any-hazard\t" + m.getResourceLocation() + "\t" + h.condition.unwrapKey().map(Object::toString).orElse("?") + "\n");
+            }
+        }
+        w.write("gt-radioactive-materials\t" + gtRadioactive + "\n");
         int total = 0, hazardous = 0;
         for (Item item : BuiltInRegistries.ITEM) {
             String ns = BuiltInRegistries.ITEM.getKey(item).getNamespace();
