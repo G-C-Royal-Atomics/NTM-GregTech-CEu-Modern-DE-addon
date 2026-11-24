@@ -8,6 +8,12 @@ import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKey;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,6 +58,36 @@ public final class GtFluidLinks {
             Map.entry("uf6", "uranium_hexafluoride"),
             Map.entry("nitroglycerin", "glyceryl_trinitrate"),
             Map.entry("liquid_concrete", "concrete"));
+
+    /** GT's own fluids the links replaced (registered, but no recipe uses them any more). */
+    public static List<Fluid> replacedGtFluids() {
+        List<Fluid> out = new ArrayList<>();
+        for (String gt : LINKS.values()) {
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath("gtceu", gt);
+            if (BuiltInRegistries.FLUID.containsKey(id)) out.add(BuiltInRegistries.FLUID.get(id));
+        }
+        return out;
+    }
+
+    /** Their buckets (gtceu:<name>_bucket). */
+    public static List<Item> replacedGtBuckets() {
+        List<Item> out = new ArrayList<>();
+        for (String gt : LINKS.values()) {
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath("gtceu", gt + "_bucket");
+            if (BuiltInRegistries.ITEM.containsKey(id)) out.add(BuiltInRegistries.ITEM.get(id));
+        }
+        return out;
+    }
+
+    /** Creative tabs: GT's replaced buckets are not shown (they stay as Material#getBucket's fallback icon). */
+    public static void onCreativeTab(BuildCreativeModeTabContentsEvent event) {
+        var buckets = replacedGtBuckets();
+        if (buckets.isEmpty()) return;
+        List<net.minecraft.world.item.ItemStack> drop = new ArrayList<>();
+        for (var stack : event.getParentEntries()) if (buckets.contains(stack.getItem())) drop.add(stack);
+        for (var stack : event.getSearchEntries()) if (buckets.contains(stack.getItem()) && !drop.contains(stack)) drop.add(stack);
+        for (var stack : drop) event.remove(stack, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+    }
 
     /** Common setup (registries done, recipes not loaded yet). */
     public static void apply() {

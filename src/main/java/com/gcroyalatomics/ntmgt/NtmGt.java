@@ -13,6 +13,7 @@ public final class NtmGt {
     public NtmGt(IEventBus modBus) {
         NtmGtNewMaterials.register();
         modBus.addListener(NtmGtMaterials::onPostMaterial);
+        modBus.addListener(com.gcroyalatomics.ntmgt.compat.GtFluidLinks::onCreativeTab);
         modBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) ->
                 e.enqueueWork(com.gcroyalatomics.ntmgt.compat.GtFluidLinks::apply));
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
@@ -20,6 +21,8 @@ public final class NtmGt {
                     com.gcroyalatomics.ntmgt.compat.NtmFormulas::onTooltip);
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
                     com.gcroyalatomics.ntmgt.compat.NtmFormulas::onTagsUpdated);
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                    com.gcroyalatomics.ntmgt.compat.NtmFluidTooltips::onTooltip);
         }
         if (Boolean.getBoolean("ntmgt.selftest")) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(

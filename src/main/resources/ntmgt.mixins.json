@@ -10,10 +10,14 @@
     "FoundryCastingBaseBlockMixin",
     "FoundryCastingBaseEntityMixin",
     "HazardSystemMixin",
+    "MaterialBucketMixin",
     "MatsMixin",
     "StrandCasterBlockMixin",
     "StrandCasterEntityMixin",
     "StrandCasterMenuMixin"
+  ],
+  "client": [
+    "client.FluidTooltipFormulaMixin"
   ],
   "injectors": {
     "defaultRequire": 1

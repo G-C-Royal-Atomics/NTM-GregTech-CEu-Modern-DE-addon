@@ -175,6 +175,7 @@ public final class MoldStand {
         crucibleChain();
         jei();
         formulas();
+        fluids();
 
         step("caster: go", () -> goTo(CASTER_FLOOR.offset(0, 1, -4)), 5);
         step("caster: hold", () -> hold(new ItemStack(ModBlocks.MACHINE_STRAND_CASTER.get())), 5);
@@ -354,6 +355,190 @@ public final class MoldStand {
     }
 
     /** JEI: NTM's casting page has the GT molds' casts, its crucible page the GT parts' melting; both shown. */
+    private static final BlockPos FLUID_ROW = ORIGIN.offset(0, 1, 18);
+
+    /**
+     * Shared fluids between the two mods' pipes and tanks: a GT pipe carries NTM's fluids (liquid and gas) into a
+     * GT drum and into an NTM barrel; an NTM duct carries from an NTM barrel into a GT drum and from a GT drum into
+     * an NTM barrel. A GT recipe's NTM fluid is what goes in.
+     */
+    private static void fluids() {
+        net.minecraft.world.level.material.Fluid acid = fluid("hbm:sulfuric_acid"), chlorine = fluid("hbm:chlorine"),
+                oil = fluid("hbm:oil");
+        BlockPos p1 = FLUID_ROW, d1 = p1.east();
+        BlockPos p2 = FLUID_ROW.offset(0, 0, -2), d2 = p2.east();
+        BlockPos p3 = FLUID_ROW.offset(4, 0, 0), b3 = p3.east();
+        BlockPos b4 = FLUID_ROW.offset(8, 0, 0), u4 = b4.east(), d4 = u4.east();
+        BlockPos d5 = FLUID_ROW.offset(12, 0, 0), u5 = d5.east(), b5 = u5.east();
+        BlockPos b6 = FLUID_ROW.offset(0, 0, -5), u6 = b6.east(), d6 = u6.east();   // drum holds water
+        BlockPos b7 = FLUID_ROW.offset(4, 0, -5), u7 = b7.east(), t7 = u7.east();   // super tank locked to water
+        BlockPos p8 = FLUID_ROW.offset(8, 0, -5), b8 = p8.east();                   // acid pipe at an oil barrel
+        net.minecraft.world.level.material.Fluid water = net.minecraft.world.level.material.Fluids.WATER;
+        step("fluids: build", () -> onServer(() -> {
+            ServerLevel level = server().overworld();
+            level.setBlockAndUpdate(p1, block("gtceu:stainless_steel_normal_fluid_pipe"));
+            level.setBlockAndUpdate(d1, block("gtceu:steel_drum"));
+            level.setBlockAndUpdate(p2, block("gtceu:stainless_steel_normal_fluid_pipe"));
+            level.setBlockAndUpdate(d2, block("gtceu:steel_drum"));
+            level.setBlockAndUpdate(p3, block("gtceu:stainless_steel_normal_fluid_pipe"));
+            level.setBlockAndUpdate(b3, block("hbm:barrel_steel"));
+            barrel(b3).tank.setTankType(oil);
+            level.setBlockAndUpdate(b4, block("hbm:barrel_steel"));
+            level.setBlockAndUpdate(u4, block("hbm:fluid_duct_paintable"));
+            level.setBlockAndUpdate(d4, block("gtceu:steel_drum"));
+            barrel(b4).tank.setTankType(oil);
+            barrel(b4).tank.setFill(8000);
+            barrel(b4).setMode(com.hbm.blockentity.machine.storage.BlockEntityBarrel.MODE_SEND);
+            level.setBlockAndUpdate(d5, block("gtceu:lv_super_tank"));
+            level.setBlockAndUpdate(u5, block("hbm:fluid_duct_paintable"));
+            level.setBlockAndUpdate(b5, block("hbm:barrel_steel"));
+            barrel(b5).tank.setTankType(oil);
+            barrel(b5).setMode(com.hbm.blockentity.machine.storage.BlockEntityBarrel.MODE_RECEIVE);
+            level.setBlockAndUpdate(b6, block("hbm:barrel_steel"));
+            level.setBlockAndUpdate(u6, block("hbm:fluid_duct_paintable"));
+            level.setBlockAndUpdate(d6, block("gtceu:steel_drum"));
+            level.setBlockAndUpdate(b7, block("hbm:barrel_steel"));
+            level.setBlockAndUpdate(u7, block("hbm:fluid_duct_paintable"));
+            level.setBlockAndUpdate(t7, block("gtceu:lv_super_tank"));
+            level.setBlockAndUpdate(p8, block("gtceu:stainless_steel_normal_fluid_pipe"));
+            level.setBlockAndUpdate(b8, block("hbm:barrel_steel"));
+            for (BlockPos b : List.of(b6, b7)) {
+                barrel(b).tank.setTankType(oil);
+                barrel(b).tank.setFill(8000);
+                barrel(b).setMode(com.hbm.blockentity.machine.storage.BlockEntityBarrel.MODE_SEND);
+            }
+            barrel(b8).tank.setTankType(oil);
+            cap(d6).fill(new net.neoforged.neoforge.fluids.FluidStack(water, 1000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            try {
+                var m = com.gregtechceu.gtceu.common.machine.storage.QuantumTankMachine.class
+                        .getDeclaredMethod("setLocked", net.neoforged.neoforge.fluids.FluidStack.class);
+                m.setAccessible(true);
+                m.invoke(com.gregtechceu.gtceu.api.machine.MetaMachine.getMachine(level, t7),
+                        new net.neoforged.neoforge.fluids.FluidStack(water, 1000));
+            } catch (ReflectiveOperationException ex) {
+                throw new RuntimeException(ex);
+            }
+            var tank = (com.gregtechceu.gtceu.common.machine.storage.QuantumTankMachine)
+                    com.gregtechceu.gtceu.api.machine.MetaMachine.getMachine(level, d5);
+            tank.autoOutput.setFluidOutputDirection(Direction.EAST);
+            tank.autoOutput.setAllowAutoOutputFluids(true);
+            for (BlockPos pipe : List.of(p1, p2, p3, p8)) { // as a player-placed pipe: joined to the tank, open end
+                var be = (com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity<?, ?>) level.getBlockEntity(pipe);
+                be.setConnection(Direction.EAST, true, false);
+                be.setConnection(Direction.WEST, true, false);
+            }
+            for (BlockPos duct : List.of(u4, u5, u6, u7)) {
+                com.hbm.blocks.network.FluidPipeBlock.retypeNode(level, duct.asLong(), oil);
+                com.hbm.blocks.network.FluidPipeBlock.refreshAround(level, duct);
+            }
+            cap(d5).fill(new net.neoforged.neoforge.fluids.FluidStack(oil, 8000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            int a = cap(p1).fill(new net.neoforged.neoforge.fluids.FluidStack(acid, 1000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            int c = cap(p2).fill(new net.neoforged.neoforge.fluids.FluidStack(chlorine, 1000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            int o = cap(p3).fill(new net.neoforged.neoforge.fluids.FluidStack(oil, 1000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            cap(p8).fill(new net.neoforged.neoforge.fluids.FluidStack(acid, 1000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            check(a > 0 && c > 0 && o > 0, "fluids: GT pipes take NTM acid " + a + ", chlorine (gas) " + c
+                    + ", crude oil " + o + " mB");
+            return null;
+        }), 5);
+        waitUntil("fluids: GT pipe → GT drum, NTM acid", () -> amount(d1, acid) > 0, 20 * 20);
+        waitUntil("fluids: GT pipe → GT drum, NTM chlorine", () -> amount(d2, chlorine) > 0, 20 * 20);
+        waitUntil("fluids: GT pipe → NTM barrel, oil", () -> amount(b3, oil) > 0, 20 * 20);
+        waitUntil("fluids: NTM barrel → NTM duct → GT drum", () -> amount(d4, oil) > 0, 20 * 30);
+        waitUntil("fluids: GT super tank (auto-output) → NTM duct → NTM barrel", () -> amount(b5, oil) > 0, 20 * 30);
+        waitTicks(20 * 15); // the negative cases get time to go wrong
+        step("fluids: report", () -> {
+            check(amount(d1, acid) > 0, "GT pipe → GT drum: NTM sulfuric acid " + amount(d1, acid) + " mB");
+            check(amount(d2, chlorine) > 0, "GT pipe → GT drum: NTM chlorine " + amount(d2, chlorine) + " mB");
+            check(amount(b3, oil) > 0, "GT pipe → NTM barrel: oil " + amount(b3, oil) + " mB");
+            check(amount(d4, oil) > 0, "NTM barrel → NTM duct → GT drum: oil " + amount(d4, oil) + " mB");
+            check(amount(b5, oil) > 0, "GT super tank (auto-output) → NTM duct → NTM barrel: oil "
+                    + amount(b5, oil) + " mB");
+            check(amount(d6, oil) == 0 && amount(d6, water) == 1000 && amount(b6, oil) == 8000,
+                    "NTM oil duct at a GT drum holding water: drum oil " + amount(d6, oil) + ", water "
+                            + amount(d6, water) + "; barrel keeps " + amount(b6, oil) + " mB");
+            check(amount(t7, oil) == 0 && amount(b7, oil) == 8000, "NTM oil duct at a GT super tank locked to water: "
+                    + "tank oil " + amount(t7, oil) + ", barrel keeps " + amount(b7, oil) + " mB");
+            check(amount(b8, acid) == 0 && amount(b8, oil) == 0, "GT pipe with NTM acid at an NTM oil barrel: barrel "
+                    + "acid " + amount(b8, acid) + ", pipe keeps " + amount(p8, acid) + " mB");
+            itemContainers(acid, oil);
+            goTo(FLUID_ROW.offset(6, 0, -3));
+        }, 5);
+        step("fluids: shot", () -> {
+            look(FLUID_ROW.offset(6, 0, 0));
+            shot("fluids");
+        }, 10);
+    }
+
+    /** Fluid items: GT cells hold NTM's fluids; an NTM canister's fluid can be poured into GT's drum. */
+    private static void itemContainers(net.minecraft.world.level.material.Fluid acid,
+                                       net.minecraft.world.level.material.Fluid oil) {
+        var cell = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("gtceu:universal_fluid_cell")));
+        var h = cell.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
+        int got = h == null ? -1 : h.fill(new net.neoforged.neoforge.fluids.FluidStack(acid, 1000),
+                net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        check(got > 0, "GT universal cell takes NTM sulfuric acid: " + got + " mB");
+        // NTM's canisters are filled by NTM's own loaders; a full one must hand its fluid to GT (cells slots, drums)
+        var full = com.hbm.capability.FluidContainerRows.filled(
+                new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("hbm:canister_empty"))), fluid("hbm:diesel"));
+        net.neoforged.neoforge.fluids.capability.IFluidHandlerItem fh = full.isEmpty() ? null : full.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
+        var drained = fh == null ? net.neoforged.neoforge.fluids.FluidStack.EMPTY : fh.drain(1000,
+                net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+        check(drained.getFluid() == fluid("hbm:diesel") && drained.getAmount() > 0, "NTM diesel canister ("
+                + BuiltInRegistries.ITEM.getKey(full.getItem()) + ") gives GT " + drained.getAmount() + " mB of "
+                + BuiltInRegistries.FLUID.getKey(drained.getFluid()) + " (GT's diesel is NTM's now)");
+    }
+
+    private static void waitTicks(int ticks) {
+        int[] left = {ticks / 5};
+        steps.addLast(new Step("wait", new Runnable() {
+            @Override
+            public void run() {
+                if (--left[0] > 0) steps.addFirst(new Step("wait", this, 5));
+            }
+        }, 5));
+    }
+
+    private static net.minecraft.world.level.material.Fluid fluid(String id) {
+        return BuiltInRegistries.FLUID.get(ResourceLocation.parse(id));
+    }
+
+    private static net.minecraft.world.level.block.state.BlockState block(String id) {
+        return BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id)).defaultBlockState();
+    }
+
+    private static com.hbm.blockentity.machine.storage.BlockEntityBarrel barrel(BlockPos pos) {
+        return (com.hbm.blockentity.machine.storage.BlockEntityBarrel) server().overworld().getBlockEntity(pos);
+    }
+
+    private static net.neoforged.neoforge.fluids.capability.IFluidHandler cap(BlockPos pos) {
+        net.neoforged.neoforge.fluids.capability.IFluidHandler h = null;
+        for (Direction d : new Direction[]{Direction.UP, null, Direction.WEST, Direction.EAST}) {
+            h = server().overworld().getCapability(
+                    net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, pos, d);
+            if (h != null) break;
+        }
+        if (h == null) throw new IllegalStateException("no fluid handler at " + pos);
+        return h;
+    }
+
+    private static int amount(BlockPos pos, net.minecraft.world.level.material.Fluid fluid) {
+        return onServer(() -> {
+            var h = cap(pos);
+            int n = 0;
+            for (int i = 0; i < h.getTanks(); i++) {
+                var st = h.getFluidInTank(i);
+                if (st.getFluid() == fluid) n += st.getAmount();
+            }
+            return n;
+        });
+    }
+
     /** Formula line (yellow, line 2) in real client tooltips: ours for NTM-only materials, GT's for linked items. */
     private static void formulas() {
         java.util.Map<String, String> expect = new java.util.LinkedHashMap<>();
@@ -376,6 +561,19 @@ public final class MoldStand {
                 check(ok && yellow && same == 1, "tooltip " + e.getKey() + ": line 2 '" + second + "' (yellow "
                         + yellow + ", " + same + "x)");
             }
+            var icon = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("hbm:fluid_icon")));
+            icon.set(com.hbm.items.ModDataComponents.FLUID_CONTENT.get(),
+                    new com.hbm.inventory.fluid.FluidStackNTM(fluid("hbm:sulfuric_acid"), 1000));
+            var text = icon.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
+                    net.minecraft.world.item.TooltipFlag.Default.NORMAL).stream().map(l -> l.getString()).toList();
+            check(text.stream().anyMatch(l -> l.contains("H₂SO₄")) && text.stream().anyMatch(l -> l.contains("K")
+                            && l.toLowerCase().contains("temp")), "NTM fluid icon (sulfuric acid): " + text);
+            var kero = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("hbm:fluid_icon")));
+            kero.set(com.hbm.items.ModDataComponents.FLUID_CONTENT.get(),
+                    new com.hbm.inventory.fluid.FluidStackNTM(fluid("hbm:kerosene"), 1000));
+            var kt = kero.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
+                    net.minecraft.world.item.TooltipFlag.Default.NORMAL).stream().map(l -> l.getString()).toList();
+            check(kt.contains("C₁₂H₂₆"), "NTM-only fluid icon (kerosene): " + kt);
         }, 5);
     }
 
