@@ -1,6 +1,7 @@
 # libs/
 
 Dependency jars that are not on a public maven. Not committed (see `.gitignore`).
+`tools/fetch-deps.sh` downloads GregTech and NTM (pinned versions, checked by sha256); CI uses it.
 Put here the same versions the mod is developed against:
 
 - `gtceu-1.21.1-8.0.0-SNAPSHOT+…jar` — GregTech CEu Modern (GitHub release `latest-1.21`)
