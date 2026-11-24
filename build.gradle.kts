@@ -34,6 +34,13 @@ neoForge {
             jvmArgument("-Xmx4g")
             programArguments.addAll("--quickPlaySingleplayer", "ntmgt-test")
         }
+        // tools/stand.sh: in-game stand of GT molds in NTM's foundry (dev/MoldStand), result in run/ntmgt-stand.txt
+        create("moldStand") {
+            client()
+            systemProperty("ntmgt.moldstand", "true")
+            jvmArgument("-Xmx3g")
+            programArguments.addAll("--quickPlaySingleplayer", "ntmgt-stand")
+        }
         create("server") { server(); programArgument("--nogui"); systemProperty("ntmgt.selftest", "true") }
         configureEach {
             systemProperty("forge.logging.markers", "REGISTRIES")
