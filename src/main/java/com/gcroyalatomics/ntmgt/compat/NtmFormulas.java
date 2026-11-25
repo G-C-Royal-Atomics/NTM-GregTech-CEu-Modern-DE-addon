@@ -127,7 +127,7 @@ public final class NtmFormulas {
 
     public static void onTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty() || !com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.ITEM_FORMULAS)) return;
         String formula = (stack.getComponentsPatch().isEmpty()
                 ? CACHE.computeIfAbsent(stack.getItem(), i -> find(stack)) : find(stack)).orElse(null);
         if (formula == null) return;

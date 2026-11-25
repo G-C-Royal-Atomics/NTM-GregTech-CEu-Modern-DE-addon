@@ -62,6 +62,7 @@ public final class GtFluidLinks {
     /** GT's own fluids the links replaced (registered, but no recipe uses them any more). */
     public static List<Fluid> replacedGtFluids() {
         List<Fluid> out = new ArrayList<>();
+        if (!com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.SHARED_FLUIDS)) return out;
         for (String gt : LINKS.values()) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath("gtceu", gt);
             if (BuiltInRegistries.FLUID.containsKey(id)) out.add(BuiltInRegistries.FLUID.get(id));
@@ -72,6 +73,7 @@ public final class GtFluidLinks {
     /** Their buckets (gtceu:<name>_bucket). */
     public static List<Item> replacedGtBuckets() {
         List<Item> out = new ArrayList<>();
+        if (!com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.SHARED_FLUIDS)) return out;
         for (String gt : LINKS.values()) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath("gtceu", gt + "_bucket");
             if (BuiltInRegistries.ITEM.containsKey(id)) out.add(BuiltInRegistries.ITEM.get(id));

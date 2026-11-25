@@ -46,17 +46,21 @@ public final class GtMolds {
     private GtMolds() {}
 
     public static @Nullable ItemMold.Mold of(ItemStack stack) {
-        if (stack.isEmpty()) return null;
+        if (stack.isEmpty() || !enabled()) return null;
         return molds().get(stack.getItem());
     }
 
     /** Every GT casting mold that works in NTM's foundry. */
     public static java.util.Collection<GtMold> all() {
-        return molds().values();
+        return enabled() ? molds().values() : java.util.List.of();
     }
 
     public static boolean is(ItemStack stack) {
         return of(stack) != null;
+    }
+
+    private static boolean enabled() {
+        return com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.GT_MOLDS);
     }
 
     private static Map<Item, GtMold> molds() {

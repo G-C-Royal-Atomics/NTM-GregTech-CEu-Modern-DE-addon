@@ -14,6 +14,7 @@ import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.hbm.inventory.material.Mats;
 import com.hbm.inventory.material.MaterialShapes;
 import com.hbm.inventory.material.NTMMaterial;
+import com.gcroyalatomics.ntmgt.NtmGtConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -36,16 +37,24 @@ import java.util.Map;
  * ingot. The metal is GT's direct smelting result where GT has one (chalcopyrite -> copper), else the ore's own.
  */
 public final class GtMelting {
-    /** Ore form -> {metal, stone} in NTM quanta (NTM's ore rows: ore 144 + 162 stone, raw 96 + 108 stone). */
-    private static final Map<String, int[]> ORE_FORMS = Map.of(
-            "raw", new int[]{96, 108},
-            "raw_ore_block", new int[]{96 * 9, 108 * 9},
-            "crushed_ore", new int[]{72, 36},
-            "impure_dust", new int[]{72, 36},
-            "purified_ore", new int[]{72, 0},
-            "refined_ore", new int[]{72, 0},
-            "pure_dust", new int[]{72, 0});
-    private static final int[] ORE_BLOCK = {144, 162};
+    private static boolean on(net.neoforged.neoforge.common.ModConfigSpec.BooleanValue v) {
+        return NtmGtConfig.on(v);
+    }
+
+    private static int get(net.neoforged.neoforge.common.ModConfigSpec.IntValue v) {
+        return NtmGtConfig.get(v);
+    }
+
+    /** Ore form -> its {metal, stone} amounts in NTM quanta (config melting.ores; NTM's ore rows by default). */
+    private static int @Nullable [] oreForm(String path) {
+        return switch (path) {
+            case "raw" -> new int[]{get(NtmGtConfig.RAW_METAL), get(NtmGtConfig.RAW_STONE)};
+            case "raw_ore_block" -> new int[]{9 * get(NtmGtConfig.RAW_METAL), 9 * get(NtmGtConfig.RAW_STONE)};
+            case "crushed_ore", "impure_dust" -> new int[]{get(NtmGtConfig.CRUSHED_METAL), get(NtmGtConfig.CRUSHED_STONE)};
+            case "purified_ore", "refined_ore", "pure_dust" -> new int[]{get(NtmGtConfig.CLEAN_METAL), 0};
+            default -> null;
+        };
+    }
     /** Cable size -> rubber ingots of insulation (GT's WireRecipeHandler). */
     private static final Map<String, Integer> CABLE_INSULATION = Map.of("cable_gt_single", 1, "cable_gt_double", 1,
             "cable_gt_quadruple", 2, "cable_gt_octal", 3, "cable_gt_hex", 5);
@@ -56,13 +65,15 @@ public final class GtMelting {
         Item item = stack.getItem();
         String ns = BuiltInRegistries.ITEM.getKey(item).getNamespace();
         if (!"gtceu".equals(ns) && !"ntmgt".equals(ns)) return List.of(); // GT's items and the addon's GT materials
+        if (!on(NtmGtConfig.GT_ITEMS_MELT)) return List.of();
 
         List<MaterialStack> parts;
         MaterialEntry entry = ChemicalHelper.getMaterialEntry(item);
         if (entry != null && entry.material() != null) {
             int[] ore = oreAmounts(entry.tagPrefix());
-            if (ore != null) return ore(entry.material(), ore);
+            if (ore != null) return on(NtmGtConfig.ORES_MELT) ? ore(entry.material(), ore) : List.of();
             if (isOtherOreForm(entry.tagPrefix())) return List.of();
+            if (isHotIngot(entry.tagPrefix()) && !on(NtmGtConfig.HOT_INGOTS_MELT)) return List.of(); // cools in GT's vacuum freezer, not melted again
         }
         // GT's full recycling composition first (a cable: its wire's metal and the rubber insulation),
         // else the item's own material (rod, gear, ...).
@@ -82,7 +93,8 @@ public final class GtMelting {
             else slag += quanta;
         }
         if (out.isEmpty()) return List.of(); // nothing in it melts
-        if (entry != null) slag += insulation(entry.tagPrefix());
+        if (entry != null && on(NtmGtConfig.CABLE_INSULATION_SLAG)) slag += insulation(entry.tagPrefix());
+        if (slag > 0 && !on(NtmGtConfig.UNMELTABLE_TO_SLAG)) return List.of(); // part of it would not melt
         if (slag > 0) add(out, Mats.MAT_SLAG, slag);
         return out;
     }
@@ -92,6 +104,7 @@ public final class GtMelting {
         Material metal = ore != null && ore.getDirectSmeltResult() != null ? ore.getDirectSmeltResult().value() : material;
         NTMMaterial mat = MaterialNames.ntm(metal);
         if (mat == null || !smeltable(mat)) return List.of(); // gem / dust ores: GT processing only
+        if (amounts[0] <= 0) return List.of();
         List<Mats.MaterialStack> out = new ArrayList<>(2);
         out.add(new Mats.MaterialStack(mat, amounts[0]));
         if (amounts[1] > 0) out.add(new Mats.MaterialStack(Mats.MAT_STONE, amounts[1]));
@@ -119,9 +132,14 @@ public final class GtMelting {
     }
 
     private static int @Nullable [] oreAmounts(TagPrefix prefix) {
-        if (TagPrefix.ORES.containsKey(prefix)) return ORE_BLOCK;
+        if (TagPrefix.ORES.containsKey(prefix)) return new int[]{get(NtmGtConfig.ORE_METAL), get(NtmGtConfig.ORE_STONE)};
         ResourceLocation id = GTRegistries.TAG_PREFIXES.getKey(prefix);
-        return id == null ? null : ORE_FORMS.get(id.getPath());
+        return id == null ? null : oreForm(id.getPath());
+    }
+
+    private static boolean isHotIngot(TagPrefix prefix) {
+        ResourceLocation id = GTRegistries.TAG_PREFIXES.getKey(prefix);
+        return id != null && id.getPath().equals("hot_ingot");
     }
 
     /** Indicator rocks: not ore to melt. */

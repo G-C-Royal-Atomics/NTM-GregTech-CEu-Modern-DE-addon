@@ -21,10 +21,19 @@ public final class NtmGtJeiPlugin implements IModPlugin {
     @Override
     public void onRuntimeAvailable(IJeiRuntime runtime) {
         var manager = runtime.getIngredientManager();
+        if (!com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.JEI_HIDE_REPLACED)) {
+            hidePoured(manager);
+            return;
+        }
         var fluids = GtFluidLinks.replacedGtFluids().stream().map(f -> new FluidStack(f, 1000)).toList();
         var buckets = GtFluidLinks.replacedGtBuckets().stream().map(ItemStack::new).toList();
         if (!fluids.isEmpty()) manager.removeIngredientsAtRuntime(NeoForgeTypes.FLUID_STACK, fluids);
         if (!buckets.isEmpty()) manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, buckets);
+        hidePoured(manager);
+    }
+
+    private static void hidePoured(mezz.jei.api.runtime.IIngredientManager manager) {
+        if (!com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.JEI_HIDE_POURED)) return;
         // NTM's poured-in-the-world fluids (sulfuric_acid_fluid, schrabidic_fluid, mud_fluid) under the very name of
         // the working fluid (sulfuric_acid, schrabidic, watz_mud): same name twice in JEI, owner asked to hide them
         var byName = new java.util.HashMap<String, java.util.List<FluidStack>>();

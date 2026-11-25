@@ -58,6 +58,7 @@ public final class GtHazards {
 
     /** Called at the end of HazardSystem.applyDataPack. */
     public static void apply() {
+        if (!com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.GT_HAZARDS)) return;
         Map<Item, HazardData> items = new HashMap<>(HazardSystem.itemMap);
         Map<String, Map<IHazardType, Double>> perIngot = new HashMap<>();
         int added = 0;

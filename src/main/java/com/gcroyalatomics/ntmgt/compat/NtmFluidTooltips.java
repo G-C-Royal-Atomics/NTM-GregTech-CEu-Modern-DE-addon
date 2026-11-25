@@ -21,6 +21,7 @@ public final class NtmFluidTooltips {
 
     public static void onTooltip(ItemTooltipEvent event) {
         var stack = event.getItemStack();
+        if (!com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.FLUID_TOOLTIPS)) return;
         if (stack.isEmpty() || !BuiltInRegistries.ITEM.getKey(stack.getItem()).getNamespace().equals("hbm")) return;
         Fluid fluid = Fluids.EMPTY;
         long amount = 1000;

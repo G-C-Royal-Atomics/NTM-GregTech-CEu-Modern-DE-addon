@@ -22,6 +22,7 @@ public abstract class FluidTooltipFormulaMixin {
     @Inject(method = "appendFluidTooltips", at = @At("HEAD"))
     private static void ntmgt$formula(FluidStack fluidStack, Consumer<Component> tooltips, TooltipFlag flag,
                                       Item.TooltipContext context, CallbackInfo ci) {
+        if (!com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.FLUID_TOOLTIPS)) return;
         if (ChemicalHelper.getMaterial(fluidStack.getFluid()) != null) return;
         String f = NtmFluidFormulas.of(fluidStack.getFluid());
         if (f != null) tooltips.accept(Component.literal(f).withStyle(ChatFormatting.YELLOW));

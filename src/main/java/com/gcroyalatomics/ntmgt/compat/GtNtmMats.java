@@ -33,9 +33,11 @@ public final class GtNtmMats {
     /** PostMaterialEvent, after the NTM-named GT materials exist. Colours are set again in {@link #recolor()}. */
     public static void register() {
         List<Material> todo = new ArrayList<>();
+        var excluded = com.gcroyalatomics.ntmgt.NtmGtConfig.get(com.gcroyalatomics.ntmgt.NtmGtConfig.GT_METALS_EXCLUDED);
         for (Material m : GTRegistries.MATERIALS) {
             if (!m.hasProperty(PropertyKey.INGOT) || m.hasProperty(PropertyKey.POLYMER)) continue;
             if (MaterialNames.ntm(m) != null) continue; // NTM has it (or it is one of NTM's metals made a GT material)
+            if (excluded.contains(m.getName()) || excluded.contains(m.getResourceLocation().toString())) continue;
             todo.add(m);
         }
         todo.sort(Comparator.comparing(m -> m.getResourceLocation().toString()));

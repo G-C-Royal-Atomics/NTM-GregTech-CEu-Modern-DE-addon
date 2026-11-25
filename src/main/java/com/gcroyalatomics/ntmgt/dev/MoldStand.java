@@ -276,6 +276,16 @@ public final class MoldStand {
             meltCheck("copper_single_cable", "copper 36, slag 72");
             meltHasSlag("lv_machine_hull", "steel ");
             meltCheck("rubber_ring", "");
+            meltCheck("hot_tungsten_steel_ingot", "");
+            // config: ntmgt-common.toml melting.hotIngotsMelt / melting.unmeltableToSlag, read while running
+            var cfg = com.gcroyalatomics.ntmgt.NtmGtConfig.class;
+            com.gcroyalatomics.ntmgt.NtmGtConfig.HOT_INGOTS_MELT.set(true);
+            meltCheck("hot_tungsten_steel_ingot", "tungsten_steel 72");
+            com.gcroyalatomics.ntmgt.NtmGtConfig.HOT_INGOTS_MELT.set(false);
+            com.gcroyalatomics.ntmgt.NtmGtConfig.UNMELTABLE_TO_SLAG.set(false);
+            meltCheck("copper_single_cable", "");
+            com.gcroyalatomics.ntmgt.NtmGtConfig.UNMELTABLE_TO_SLAG.set(true);
+            check(cfg != null, "config values switched back");
             meltCheck("chalcopyrite_ore", "copper 144, stone 162");
             meltCheck("raw_chalcopyrite", "copper 96, stone 108");
             meltCheck("purified_chalcopyrite_ore", "copper 72");

@@ -21,6 +21,7 @@ public final class GtPushOnly {
     /** May an NTM duct on {@code side} of this block take fluid from it? */
     public static boolean ductMayTake(@Nullable BlockEntity be, @Nullable Direction side) {
         if (!isGt(be)) return true;
+        if (!com.gcroyalatomics.ntmgt.NtmGtConfig.on(com.gcroyalatomics.ntmgt.NtmGtConfig.DUCTS_OUTPUT_SIDE_ONLY)) return true;
         if (be instanceof com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity<?, ?>) return true;
         var machine = com.gregtechceu.gtceu.api.machine.MetaMachine.getMachine(be.getLevel(), be.getBlockPos());
         if (machine == null || side == null) return false;

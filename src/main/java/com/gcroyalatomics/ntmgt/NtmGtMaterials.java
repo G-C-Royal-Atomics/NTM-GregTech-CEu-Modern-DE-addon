@@ -32,9 +32,14 @@ public final class NtmGtMaterials {
     private NtmGtMaterials() {}
 
     public static void onPostMaterial(PostMaterialEvent event) {
-        NtmGtNewMaterials.extendGtElements();
-        NtmGtNewMaterials.setFormulas();
-        com.gcroyalatomics.ntmgt.compat.GtRadiationOff.apply();
+        if (NtmGtConfig.on(NtmGtConfig.NTM_METALS_AS_GT)) NtmGtNewMaterials.extendGtElements();
+        if (NtmGtConfig.on(NtmGtConfig.GT_FORMULAS)) NtmGtNewMaterials.setFormulas();
+        if (NtmGtConfig.on(NtmGtConfig.GT_RADIATION_OFF)) com.gcroyalatomics.ntmgt.compat.GtRadiationOff.apply();
+        if (NtmGtConfig.on(NtmGtConfig.LINK_NTM_ITEMS)) linkItems();
+        if (NtmGtConfig.on(NtmGtConfig.GT_METALS_AS_NTM)) com.gcroyalatomics.ntmgt.compat.GtNtmMats.register();
+    }
+
+    private static void linkItems() {
         int linked = 0, skipped = 0;
         for (String[] row : readTable()) {
             TagPrefix prefix = GTRegistries.TAG_PREFIXES.get(ResourceLocation.fromNamespaceAndPath("gtceu", row[0]));
@@ -59,7 +64,6 @@ public final class NtmGtMaterials {
             linked++;
         }
         NtmGt.LOGGER.info("[ntmgt] linked {} NTM items into GT materials, {} rows skipped", linked, skipped);
-        com.gcroyalatomics.ntmgt.compat.GtNtmMats.register();
     }
 
     private static Block block(ResourceLocation id) {
