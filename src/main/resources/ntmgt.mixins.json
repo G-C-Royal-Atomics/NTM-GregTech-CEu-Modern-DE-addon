@@ -15,6 +15,7 @@
     "NtmFluidBucketEmptyMixin",
     "NtmFluidFaceCacheMixin",
     "NtmFluidGatherMixin",
+    "NtmMaterialNameMixin",
     "StrandCasterBlockMixin",
     "StrandCasterEntityMixin",
     "StrandCasterMenuMixin"

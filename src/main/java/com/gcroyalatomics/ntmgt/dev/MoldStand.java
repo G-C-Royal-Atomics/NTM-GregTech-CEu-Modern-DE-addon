@@ -173,6 +173,7 @@ public final class MoldStand {
 
         // strand caster: placed by the player, mold by click, GUI, GUI slot click, shift-click
         crucibleChain();
+        gtMaterials();
         jei();
         formulas();
         fluids();
@@ -253,6 +254,66 @@ public final class MoldStand {
      * composition: 8 x 36 = 288 = one gear), the crucible pours (no recipe template: out the back), the mold casts a
      * GT steel gear, the player takes it out.
      */
+    /** Every GT metal/alloy is an NTM material: melts into itself, slag for the rest, GT ores like NTM's. */
+    private static void gtMaterials() {
+        step("gt mats: bronze is NTM", () -> {
+            NTMMaterial bronze = Mats.matByName.get("bronze");
+            check(bronze != null && com.gcroyalatomics.ntmgt.compat.GtNtmMats.isGt(bronze),
+                    "GT bronze is an NTM material (" + bronze + ")");
+            if (bronze == null) return;
+            String name = net.minecraft.network.chat.Component.translatable(bronze.getUnlocalizedName()).getString();
+            check(name.equals("Bronze"), "NTM bronze is named by GT: " + name);
+            int gtRgb = com.gcroyalatomics.ntmgt.compat.MaterialNames.gt("bronze").getMaterialRGB() & 0xFFFFFF;
+            check(bronze.solidColorLight == gtRgb && bronze.moltenColor == gtRgb,
+                    String.format("NTM bronze colour %06X / molten %06X = GT %06X", bronze.solidColorLight,
+                            bronze.moltenColor, gtRgb));
+            check(bronze.solidColorLight != bronze.solidColorDark, "NTM bronze has a dark colour (slag texture)");
+            check(com.hbm.client.render.SlagTextures.texture(bronze) != null, "NTM bronze has a slag texture");
+        }, 2);
+        step("gt mats: melting", () -> {
+            meltCheck("bronze_ingot", "bronze 72");
+            meltCheck("stainless_steel_gear", "stainless_steel 288");
+            meltCheck("copper_single_cable", "copper 36, slag 72");
+            meltCheck("rubber_ring", "");
+            meltCheck("chalcopyrite_ore", "copper 144, stone 162");
+            meltCheck("raw_chalcopyrite", "copper 96, stone 108");
+            meltCheck("purified_chalcopyrite_ore", "copper 72");
+        }, 2);
+        step("gt mats: molds", () -> {
+            NTMMaterial bronze = Mats.matByName.get("bronze");
+            ItemMold.Mold ingot = ItemMold.molds.stream().filter(m -> m.name.equals("ingot")).findFirst().orElse(null);
+            ItemStack fromNtm = ingot == null ? null : ingot.getOutput(bronze);
+            check(fromNtm != null && id(fromNtm).equals("gtceu:bronze_ingot"),
+                    "NTM ingot mold casts bronze into " + (fromNtm == null ? "-" : id(fromNtm)));
+            ItemStack fromGt = GtMolds.of(new ItemStack(gtItem("gear_casting_mold"))).getOutput(bronze);
+            check(fromGt != null && id(fromGt).equals("gtceu:bronze_gear"),
+                    "GT gear mold casts bronze into " + (fromGt == null ? "-" : id(fromGt)));
+        }, 2);
+        step("gt mats: pour bronze", () -> {
+            reset(SMALL);
+            onServer(() -> {
+                if (server().overworld().getBlockEntity(SMALL) instanceof BlockEntityFoundryCastingBase c) {
+                    c.inventory.set(0, new ItemStack(gtItem("gear_casting_mold")));
+                    c.setChanged();
+                }
+                return null;
+            });
+            pour(SMALL, "bronze");
+        }, 1);
+        waitUntil("gt mats: bronze cast", () -> !serverSlot(SMALL, 1).isEmpty(), 20 * 30);
+        step("gt mats: bronze gear", () -> {
+            check(id(serverSlot(SMALL, 1)).equals("gtceu:bronze_gear"),
+                    "molten bronze cast in the GT gear mold: " + id(serverSlot(SMALL, 1)));
+            reset(SMALL);
+        }, 2);
+    }
+
+    private static void meltCheck(String gtId, String expected) {
+        List<Mats.MaterialStack> melts = Mats.getSmeltingMaterialsFromItem(new ItemStack(gtItem(gtId)));
+        String got = String.join(", ", melts.stream().map(m -> m.material.tagPath + " " + m.amount).toList());
+        check(got.equals(expected), "crucible melts gtceu:" + gtId + " into [" + got + "] (expected [" + expected + "])");
+    }
+
     private static void crucibleChain() {
         Item rod = gtItem("steel_rod");
         Item gearMold = gtItem("gear_casting_mold");

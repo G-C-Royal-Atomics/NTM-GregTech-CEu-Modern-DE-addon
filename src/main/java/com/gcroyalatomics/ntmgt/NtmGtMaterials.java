@@ -59,6 +59,7 @@ public final class NtmGtMaterials {
             linked++;
         }
         NtmGt.LOGGER.info("[ntmgt] linked {} NTM items into GT materials, {} rows skipped", linked, skipped);
+        com.gcroyalatomics.ntmgt.compat.GtNtmMats.register();
     }
 
     private static Block block(ResourceLocation id) {

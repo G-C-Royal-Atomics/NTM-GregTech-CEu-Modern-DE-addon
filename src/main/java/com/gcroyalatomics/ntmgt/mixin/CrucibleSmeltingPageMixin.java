@@ -25,9 +25,14 @@ public abstract class CrucibleSmeltingPageMixin {
     private List<CrucibleSmeltingPage.Recipe> ntmgt$gtParts(List<CrucibleSmeltingPage.Recipe> rows) {
         List<CrucibleSmeltingPage.Recipe> out = new ArrayList<>(rows);
         CrucibleSmeltingPage page = (CrucibleSmeltingPage) (Object) this;
+        // Items NTM's own tables already list (GT ingots, plates, ... of metals NTM knows by their c: tags).
+        java.util.Set<Item> known = new java.util.HashSet<>();
+        for (var ingredient : Mats.smeltingCatalog().keySet())
+            for (ItemStack stack : ingredient.getItems()) known.add(stack.getItem());
         for (Item item : BuiltInRegistries.ITEM) {
             var key = BuiltInRegistries.ITEM.getKey(item);
             if (!key.getNamespace().equals("gtceu") && !key.getNamespace().equals("ntmgt")) continue;
+            if (known.contains(item)) continue;
             List<Mats.MaterialStack> melts = GtMelting.of(new ItemStack(item));
             if (melts.isEmpty()) continue;
             List<ItemStack> molten = new ArrayList<>(melts.size());
