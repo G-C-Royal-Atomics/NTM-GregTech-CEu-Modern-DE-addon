@@ -1,16 +1,18 @@
 package com.gcroyalatomics.ntmgt.mixinplugin;
 
+import net.neoforged.fml.loading.FMLLoader;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
-import org.spongepowered.asm.service.MixinService;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,25 +42,39 @@ public final class JeiMixinPlugin implements IMixinConfigPlugin {
         newJeiLayout = jeiLacksRecipeHeight();
         if (!newJeiLayout) return;
         try {
-            if (dropMuiMixin()) LOG.info("[ntmgt] JEI 19.64+: ModularUI {} replaced by ntmgt's layout fix", MUI_MIXIN);
+            if (dropMuiMixin()) LOG.info("[ntmgt] ModularUI {} replaced by ntmgt's layout fix", MUI_MIXIN);
+            else LOG.info("[ntmgt] ModularUI {} not present, nothing to replace", MUI_MIXIN);
         } catch (Throwable t) {
             LOG.warn("[ntmgt] could not take ModularUI's {} out; JEI may crash with this JEI version", MUI_MIXIN, t);
         }
     }
 
-    /** True when RecipeGuiLogic exists and its layout method no longer has the local ModularUI's mixin targets. */
+    /**
+     * True when JEI's RecipeGuiLogic layout method no longer has the local ModularUI's mixin targets. The class is
+     * read straight from JEI's jar: ModLauncher's mixin service cannot hand out untransformed bytecode, and
+     * transformed would mean running mixins on it now.
+     */
     private static boolean jeiLacksRecipeHeight() {
-        ClassNode node;
         try {
-            node = MixinService.getService().getBytecodeProvider().getClassNode(GUI_LOGIC, false);
+            var jei = FMLLoader.getLoadingModList().getModFileById("jei");
+            if (jei == null) return false;
+            String version = jei.getMods().isEmpty() ? "?" : jei.getMods().get(0).getVersion().toString();
+            Path file = jei.getFile().findResource(GUI_LOGIC.replace('.', '/') + ".class");
+            if (!Files.exists(file)) {
+                LOG.info("[ntmgt] JEI {}: no {}, ModularUI left as is", version, GUI_LOGIC);
+                return false;
+            }
+            ClassNode node = new ClassNode();
+            new ClassReader(Files.readAllBytes(file)).accept(node, 0);
+            for (MethodNode m : node.methods) {
+                if (!m.name.equals("getVisibleRecipeLayoutsWithButtons") || m.localVariables == null) continue;
+                boolean old = m.localVariables.stream().anyMatch(v -> v.name.equals("recipeHeight"));
+                LOG.info("[ntmgt] JEI {}: recipe layout is {}", version, old ? "old, ModularUI left as is" : "new");
+                return !old;
+            }
+            LOG.info("[ntmgt] JEI {}: layout method not found, ModularUI left as is", version);
         } catch (Throwable t) {
-            return false; // no JEI
-        }
-        for (MethodNode m : node.methods) {
-            if (!m.name.equals("getVisibleRecipeLayoutsWithButtons")) continue;
-            if (m.localVariables == null) return false; // no debug info: cannot tell, leave ModularUI alone
-            for (LocalVariableNode v : m.localVariables) if (v.name.equals("recipeHeight")) return false;
-            return true;
+            LOG.warn("[ntmgt] could not read JEI's recipe layout, ModularUI left as is", t);
         }
         return false;
     }
