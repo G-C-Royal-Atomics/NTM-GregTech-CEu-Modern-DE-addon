@@ -372,6 +372,9 @@ public final class MoldStand {
         BlockPos d5 = FLUID_ROW.offset(12, 0, 0), u5 = d5.east(), b5 = u5.east();
         BlockPos b6 = FLUID_ROW.offset(0, 0, -5), u6 = b6.east(), d6 = u6.east();   // drum holds water
         BlockPos b7 = FLUID_ROW.offset(4, 0, -5), u7 = b7.east(), t7 = u7.east();   // super tank locked to water
+        BlockPos t9 = FLUID_ROW.offset(4, 0, -8), u9 = t9.east(), b9 = u9.east();   // super tank, no output side
+        BlockPos d10 = FLUID_ROW.offset(4, 0, -11), u10 = d10.east(), b10 = u10.east(); // GT drum (never pushes)
+        BlockPos b11 = FLUID_ROW.offset(4, 0, -14), u11 = b11.east(), r11 = u11.east(); // NTM acid -> GT chem reactor
         BlockPos p8 = FLUID_ROW.offset(8, 0, -5), b8 = p8.east();                   // acid pipe at an oil barrel
         net.minecraft.world.level.material.Fluid water = net.minecraft.world.level.material.Fluids.WATER;
         step("fluids: build", () -> onServer(() -> {
@@ -428,7 +431,32 @@ public final class MoldStand {
                 be.setConnection(Direction.EAST, true, false);
                 be.setConnection(Direction.WEST, true, false);
             }
-            for (BlockPos duct : List.of(u4, u5, u6, u7)) {
+            level.setBlockAndUpdate(t9, block("gtceu:lv_super_tank"));
+            level.setBlockAndUpdate(d10, block("gtceu:steel_drum"));
+            for (BlockPos p : List.of(u9, u10)) level.setBlockAndUpdate(p, block("hbm:fluid_duct_paintable"));
+            for (BlockPos p : List.of(b9, b10)) {
+                level.setBlockAndUpdate(p, block("hbm:barrel_steel"));
+                barrel(p).tank.setTankType(oil);
+                barrel(p).setMode(com.hbm.blockentity.machine.storage.BlockEntityBarrel.MODE_RECEIVE);
+            }
+            for (BlockPos p : List.of(t9, d10)) cap(p).fill(new net.neoforged.neoforge.fluids.FluidStack(oil, 4000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            level.setBlockAndUpdate(b11, block("hbm:barrel_tcalloy"));
+            barrel(b11).tank.setTankType(acid);
+            barrel(b11).tank.setFill(4000);
+            barrel(b11).setMode(com.hbm.blockentity.machine.storage.BlockEntityBarrel.MODE_SEND);
+            level.setBlockAndUpdate(u11, block("hbm:fluid_duct_paintable"));
+            level.setBlockAndUpdate(r11, block("gtceu:lv_chemical_reactor"));
+            var reactor = (com.gregtechceu.gtceu.api.machine.SimpleTieredMachine)
+                    com.gregtechceu.gtceu.api.machine.MetaMachine.getMachine(level, r11);
+            reactor.importItems.setStackInSlot(0, new ItemStack(BuiltInRegistries.ITEM.get(
+                    ResourceLocation.parse("gtceu:salt_dust")), 2));
+            reactor.getTrait(com.gregtechceu.gtceu.common.machine.trait.ProgrammableCircuitSlotTrait.class)
+                    .setCurrentCircuit(1);
+            reactor.energyContainer.setEnergyStored(reactor.energyContainer.getEnergyCapacity());
+            com.hbm.blocks.network.FluidPipeBlock.retypeNode(level, u11.asLong(), acid);
+            com.hbm.blocks.network.FluidPipeBlock.refreshAround(level, u11);
+            for (BlockPos duct : List.of(u4, u5, u6, u7, u9, u10)) {
                 com.hbm.blocks.network.FluidPipeBlock.retypeNode(level, duct.asLong(), oil);
                 com.hbm.blocks.network.FluidPipeBlock.refreshAround(level, duct);
             }
@@ -466,6 +494,22 @@ public final class MoldStand {
                     + "tank oil " + amount(t7, oil) + ", barrel keeps " + amount(b7, oil) + " mB");
             check(amount(b8, acid) == 0 && amount(b8, oil) == 0, "GT pipe with NTM acid at an NTM oil barrel: barrel "
                     + "acid " + amount(b8, acid) + ", pipe keeps " + amount(p8, acid) + " mB");
+            check(amount(b9, oil) == 0 && amount(t9, oil) == 4000, "NTM duct does not pull from a GT super tank "
+                    + "without an output side: barrel " + amount(b9, oil) + ", tank keeps " + amount(t9, oil) + " mB");
+            check(amount(b10, oil) == 0 && amount(d10, oil) == 4000, "NTM duct does not pull from a GT drum: barrel "
+                    + amount(b10, oil) + ", drum keeps " + amount(d10, oil) + " mB");
+            String reactorState = onServer(() -> {
+                var reactor = com.gregtechceu.gtceu.api.machine.MetaMachine.getMachine(server().overworld(), r11)
+                        instanceof com.gregtechceu.gtceu.api.machine.SimpleTieredMachine m ? m : null;
+                if (reactor == null) return "no GT machine at " + r11;
+                var hcl = reactor.exportFluids.getFluidInTank(0);
+                return hcl.getAmount() + " mB of " + BuiltInRegistries.FLUID.getKey(hcl.getFluid())
+                        + ", acid in machine " + reactor.importFluids.getFluidInTank(0).getAmount()
+                        + ", salt left " + reactor.importItems.getStackInSlot(0).getCount();
+            });
+            check(reactorState.contains("hydrochloric") && !reactorState.startsWith("0 mB"),
+                    "NTM barrel -> NTM duct -> GT chemical reactor (2 salt, circuit 1, LV): " + reactorState
+                            + ", barrel left " + amount(b11, acid));
             itemContainers(acid, oil);
             goTo(FLUID_ROW.offset(6, 0, -3));
         }, 5);
@@ -585,6 +629,13 @@ public final class MoldStand {
             var kt = kero.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
                     net.minecraft.world.item.TooltipFlag.Default.NORMAL).stream().map(l -> l.getString()).toList();
             check(kt.contains("C₁₂H₂₆"), "NTM-only fluid icon (kerosene): " + kt);
+            var duct = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("hbm:fluid_duct_paintable")));
+            duct.set(com.hbm.items.ModDataComponents.FLUID_CONTENT.get(),
+                    new com.hbm.inventory.fluid.FluidStackNTM(fluid("hbm:sulfuric_acid"), 0, 0));
+            var dt = duct.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
+                    net.minecraft.world.item.TooltipFlag.Default.NORMAL).stream().map(l -> l.getString()).toList();
+            check(dt.stream().noneMatch(l -> l.contains("H₂SO₄") || l.contains("Temperature")),
+                    "NTM acid duct item has no fluid formula/temperature: " + dt);
         }, 5);
     }
 
@@ -633,6 +684,80 @@ public final class MoldStand {
             showPage(rt, type.get(), focus);
         }, 30);
         step("jei: gt page shot", () -> shot("jei-gt-macerator"), 5);
+        step("jei: shared fluid uses", () -> {
+            Minecraft.getInstance().setScreen(null);
+            var rt = StandJeiPlugin.runtime;
+            var ft = net.neoforged.neoforge.fluids.FluidStack.class;
+            var type = mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK;
+            var named = new java.util.ArrayList<String>();
+            for (var fs : rt.getIngredientManager().getAllIngredients(type)) {
+                if (!fs.getHoverName().getString().equals("Sulfuric Acid")) continue;
+                var focus = rt.getJeiHelpers().getFocusFactory().createFocus(
+                        mezz.jei.api.recipe.RecipeIngredientRole.INPUT, type, fs);
+                long cats = rt.getRecipeManager().createRecipeCategoryLookup().limitFocus(List.of(focus)).get().count();
+                named.add(BuiltInRegistries.FLUID.getKey(fs.getFluid()) + " " + fs.getComponentsPatch() + " uses in "
+                        + cats + " pages");
+            }
+            // NTM's poured-in-the-world hbm:sulfuric_acid_fluid is hidden; GT's linked one too
+            check(named.size() == 1 && named.get(0).startsWith("hbm:sulfuric_acid {}") && !named.get(0).contains(" 0 pages"),
+                    "JEI 'Sulfuric Acid' fluids: " + named);
+            for (String fid : List.of("hbm:pheromone_m", "hbm:sulfuric_acid", "hbm:hydrogen")) {
+                var fs = new net.neoforged.neoforge.fluids.FluidStack(fluid(fid), 1000);
+                var made = new java.util.ArrayList<String>();
+                for (var role : List.of(mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT,
+                        mezz.jei.api.recipe.RecipeIngredientRole.INPUT)) {
+                    var focus = rt.getJeiHelpers().getFocusFactory().createFocus(role, type, fs);
+                    made.add(role + " " + rt.getRecipeManager().createRecipeCategoryLookup().limitFocus(List.of(focus))
+                            .get().map(c -> c.getRecipeType().getUid().toString()).toList());
+                }
+                check(!made.get(0).endsWith("[]"), "JEI R/U for " + fid + ": " + made);
+            }
+        }, 30);
+        step("jei: duplicate names dump", () -> {
+            var rt = StandJeiPlugin.runtime;
+            var byName = new java.util.TreeMap<String, java.util.List<String>>();
+            for (var fs : rt.getIngredientManager().getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK))
+                byName.computeIfAbsent(fs.getHoverName().getString(), k -> new java.util.ArrayList<>())
+                        .add("fluid " + BuiltInRegistries.FLUID.getKey(fs.getFluid()) + " " + fs.getComponentsPatch());
+            for (ItemStack st : rt.getIngredientManager().getAllIngredients(mezz.jei.api.constants.VanillaTypes.ITEM_STACK)) {
+                String n = st.getHoverName().getString();
+                if (!BuiltInRegistries.ITEM.getKey(st.getItem()).getNamespace().matches("hbm|gtceu")) continue;
+                if (!(n.contains("Bucket") || n.contains("Cell") || n.contains("Canister") || n.contains("Tank")
+                        || st.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null))
+                    continue;
+                var h = st.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
+                String in = h == null || h.getTanks() == 0 ? "" : " holds " + BuiltInRegistries.FLUID.getKey(
+                        h.getFluidInTank(0).getFluid());
+                byName.computeIfAbsent(n, k -> new java.util.ArrayList<>())
+                        .add("item " + BuiltInRegistries.ITEM.getKey(st.getItem()) + in);
+            }
+            try (var w = java.nio.file.Files.newBufferedWriter(Minecraft.getInstance().gameDirectory.toPath()
+                    .resolve("ntmgt-jei-names.txt"))) {
+                for (var e : byName.entrySet()) w.write(e.getKey() + "\t" + e.getValue() + "\n");
+            } catch (java.io.IOException e) { throw new RuntimeException(e); }
+        }, 10);
+        step("jei: buckets of NTM fluids", () -> {
+            var rt = StandJeiPlugin.runtime;
+            var out = new java.util.ArrayList<String>();
+            boolean ok = true;
+            for (ItemStack st : rt.getIngredientManager().getAllIngredients(mezz.jei.api.constants.VanillaTypes.ITEM_STACK)) {
+                String name = st.getHoverName().getString();
+                if (!name.contains("Sulfuric Acid") || !name.contains("Bucket") || name.contains("Diluted")) continue;
+                var copy = st.copy();
+                var h = copy.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
+                String res = "no handler";
+                if (h != null) {
+                    var drained = h.drain(1000, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                    ItemStack after = h.getContainer();
+                    res = drained.getAmount() + " mB -> " + BuiltInRegistries.ITEM.getKey(after.getItem()) + " "
+                            + after.getComponentsPatch() + " stack " + after.getMaxStackSize();
+                    ok &= after.isEmpty() || after.getItem() == net.minecraft.world.item.Items.BUCKET
+                            && after.getComponentsPatch().isEmpty();
+                }
+                out.add(BuiltInRegistries.ITEM.getKey(st.getItem()) + " " + st.getComponentsPatch() + ": " + res);
+            }
+            check(ok, "JEI 'Sulfuric Acid' buckets empty into a plain bucket: " + out);
+        }, 10);
         step("jei: close", () -> Minecraft.getInstance().setScreen(null), 5);
     }
 

@@ -16,16 +16,22 @@ import net.neoforged.neoforge.fluids.FluidStack;
 public final class NtmFluidTooltips {
     private NtmFluidTooltips() {}
 
+    private static final net.minecraft.resources.ResourceLocation ICON =
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm", "fluid_icon");
+
     public static void onTooltip(ItemTooltipEvent event) {
         var stack = event.getItemStack();
         if (stack.isEmpty() || !BuiltInRegistries.ITEM.getKey(stack.getItem()).getNamespace().equals("hbm")) return;
         Fluid fluid = Fluids.EMPTY;
         long amount = 1000;
         var content = stack.get(ModDataComponents.FLUID_CONTENT.get());
-        if (content != null && content.type() != null) {
+        // only items that hold or name a fluid: ducts, barrels and machines carry FLUID_CONTENT / FLUID_IDENTIFIER
+        // just as their set type (amount 0), and those are not the fluid
+        boolean icon = stack.getItem() == BuiltInRegistries.ITEM.get(ICON);
+        if (content != null && content.type() != null && (content.amount() > 0 || icon)) {
             fluid = content.type();
-            amount = content.amount();
-        } else {
+            amount = Math.max(1, content.amount());
+        } else if (stack.getItem() instanceof com.hbm.items.machine.FluidIdentifierItem) {
             var id = stack.get(ModDataComponents.FLUID_IDENTIFIER.get());
             if (id != null && id.primary() != null) fluid = id.primary();
         }

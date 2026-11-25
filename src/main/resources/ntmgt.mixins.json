@@ -12,6 +12,9 @@
     "HazardSystemMixin",
     "MaterialBucketMixin",
     "MatsMixin",
+    "NtmFluidBucketEmptyMixin",
+    "NtmFluidFaceCacheMixin",
+    "NtmFluidGatherMixin",
     "StrandCasterBlockMixin",
     "StrandCasterEntityMixin",
     "StrandCasterMenuMixin"

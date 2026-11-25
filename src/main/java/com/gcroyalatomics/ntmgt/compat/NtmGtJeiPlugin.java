@@ -25,5 +25,19 @@ public final class NtmGtJeiPlugin implements IModPlugin {
         var buckets = GtFluidLinks.replacedGtBuckets().stream().map(ItemStack::new).toList();
         if (!fluids.isEmpty()) manager.removeIngredientsAtRuntime(NeoForgeTypes.FLUID_STACK, fluids);
         if (!buckets.isEmpty()) manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, buckets);
+        // NTM's poured-in-the-world fluids (sulfuric_acid_fluid, schrabidic_fluid, mud_fluid) under the very name of
+        // the working fluid (sulfuric_acid, schrabidic, watz_mud): same name twice in JEI, owner asked to hide them
+        var byName = new java.util.HashMap<String, java.util.List<FluidStack>>();
+        for (FluidStack fs : manager.getAllIngredients(NeoForgeTypes.FLUID_STACK)) {
+            if (!net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fs.getFluid()).getNamespace().equals("hbm"))
+                continue;
+            byName.computeIfAbsent(fs.getHoverName().getString(), k -> new java.util.ArrayList<>()).add(fs);
+        }
+        var world = new java.util.ArrayList<FluidStack>();
+        for (var group : byName.values()) {
+            var poured = group.stream().filter(fs -> fs.getFluid() instanceof com.hbm.blocks.fluid.ClassicFluid).toList();
+            if (!poured.isEmpty() && poured.size() < group.size()) world.addAll(poured);
+        }
+        if (!world.isEmpty()) manager.removeIngredientsAtRuntime(NeoForgeTypes.FLUID_STACK, world);
     }
 }
