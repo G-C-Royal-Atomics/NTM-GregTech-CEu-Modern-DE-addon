@@ -684,6 +684,24 @@ public final class MoldStand {
             showPage(rt, type.get(), focus);
         }, 30);
         step("jei: gt page shot", () -> shot("jei-gt-macerator"), 5);
+        step("jei: modularui layout", () -> {
+            // JEI 19.64+ breaks ModularUI's RecipeGuiLogicMixin (crash on inventory open); ntmgt swaps in its own.
+            String v = net.neoforged.fml.ModList.get().getModFileById("jei").versionString();
+            boolean newJei = new org.apache.maven.artifact.versioning.DefaultArtifactVersion(v)
+                    .compareTo(new org.apache.maven.artifact.versioning.DefaultArtifactVersion("19.64")) >= 0;
+            Class<?> logic;
+            try {
+                logic = Class.forName("mezz.jei.gui.recipes.RecipeGuiLogic");
+            } catch (ClassNotFoundException e) {
+                check(false, "JEI RecipeGuiLogic not found");
+                return;
+            }
+            var names = java.util.Arrays.stream(logic.getDeclaredMethods()).map(java.lang.reflect.Method::getName).toList();
+            boolean ours = names.stream().anyMatch(n -> n.contains("ntmgt$muiRecipeSize"));
+            boolean mui = names.stream().anyMatch(n -> n.contains("modularui$useCategoryMaxHeightForLayout"));
+            check(newJei ? ours && !mui : mui && !ours, "JEI " + v + " recipe layout: ntmgt fix " + ours
+                    + ", ModularUI mixin " + mui + "; GT page open: " + Minecraft.getInstance().screen);
+        }, 5);
         step("jei: shared fluid uses", () -> {
             Minecraft.getInstance().setScreen(null);
             var rt = StandJeiPlugin.runtime;

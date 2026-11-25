@@ -65,10 +65,11 @@ configurations.runtimeClasspath { extendsFrom(localRuntime) }
 
 val localMods = fileTree("libs") { include("*.jar") }
 
-// GT ships Registrate (its material API needs it) jar-in-jar; compile against the bundled copy.
+// GT ships Registrate (its material API needs it) and ModularUI jar-in-jar; compile against the bundled copies.
 val gtJarJar = tasks.register<Sync>("gtJarJar") {
     from(localMods.filter { it.name.startsWith("gtceu-") }.elements.map { jars -> jars.map { zipTree(it) } }) {
         include("META-INF/jarjar/Registrate-*.jar")
+        include("META-INF/jarjar/modularui-*.jar") // JEI layout fix for ModularUI categories (compat/MuiJeiLayout)
         eachFile { path = name }
     }
     includeEmptyDirs = false
