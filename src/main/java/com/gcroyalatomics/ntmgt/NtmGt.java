@@ -27,6 +27,8 @@ public final class NtmGt {
                     com.gcroyalatomics.ntmgt.compat.NtmFormulas::onTagsUpdated);
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
                     com.gcroyalatomics.ntmgt.compat.NtmFluidTooltips::onTooltip);
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                    com.gcroyalatomics.ntmgt.compat.MoltenIdTooltip::onTooltip);
         }
         if (Boolean.getBoolean("ntmgt.selftest")) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(

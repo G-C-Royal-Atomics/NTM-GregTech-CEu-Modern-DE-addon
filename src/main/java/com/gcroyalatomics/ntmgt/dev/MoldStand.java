@@ -269,6 +269,11 @@ public final class MoldStand {
                             bronze.moltenColor, gtRgb));
             check(bronze.solidColorLight != bronze.solidColorDark, "NTM bronze has a dark colour (slag texture)");
             check(com.hbm.client.render.SlagTextures.texture(bronze) != null, "NTM bronze has a slag texture");
+            var mc = Minecraft.getInstance();
+            var molten = com.hbm.items.machine.ItemScraps.create(new Mats.MaterialStack(bronze, 72), true);
+            var lines = molten.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
+                    net.minecraft.world.item.TooltipFlag.ADVANCED).stream().map(net.minecraft.network.chat.Component::getString).toList();
+            check(lines.contains("NTM material: bronze"), "molten bronze tooltip (F3+H) names its id: " + lines);
         }, 2);
         step("gt mats: melting", () -> {
             meltCheck("bronze_ingot", "bronze 72");

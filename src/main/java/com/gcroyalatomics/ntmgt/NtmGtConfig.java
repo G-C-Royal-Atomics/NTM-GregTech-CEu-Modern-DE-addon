@@ -110,6 +110,11 @@ public final class NtmGtConfig {
     public static final ModConfigSpec.BooleanValue FLUID_TOOLTIPS = K
             .comment("Formula and temperature lines for NTM fluids (in containers, JEI, GT tanks).")
             .define("tooltips.fluidLines", true);
+    public static final ModConfigSpec.ConfigValue<String> MATERIAL_IDS = K
+            .comment("NTM material id under molten metal and scraps (JEI crucible/casting pages), the name NTM's",
+                    "recipe files use ({\"material\": \"bronze\"}): \"advanced\" = with F3+H, \"always\", \"never\".")
+            .define("tooltips.materialIds", "advanced", o -> o instanceof String v
+                    && (v.equals("advanced") || v.equals("always") || v.equals("never")));
     public static final ModConfigSpec.BooleanValue JEI_HIDE_REPLACED = K
             .comment("JEI hides GT's fluids and buckets replaced by NTM's (fluids.sharedFluids).")
             .define("jei.hideReplacedGtFluids", true);
@@ -133,7 +138,7 @@ public final class NtmGtConfig {
         return loaded(value) ? value.get() : value.getDefault();
     }
 
-    public static List<? extends String> get(ModConfigSpec.ConfigValue<List<? extends String>> value) {
+    public static <T> T get(ModConfigSpec.ConfigValue<T> value) {
         return loaded(value) ? value.get() : value.getDefault();
     }
 
@@ -150,6 +155,6 @@ public final class NtmGtConfig {
 
     private static final List<ModConfigSpec.ConfigValue<?>> STARTUP_VALUES = List.of(NTM_METALS_AS_GT, LINK_NTM_ITEMS,
             GT_METALS_AS_NTM, GT_METALS_EXCLUDED, SHARED_FLUIDS, GT_RADIATION_OFF, GT_FORMULAS);
-    private static final List<ModConfigSpec.ConfigValue<?>> CLIENT_VALUES = List.of(ITEM_FORMULAS, FLUID_TOOLTIPS,
+    private static final List<ModConfigSpec.ConfigValue<?>> CLIENT_VALUES = List.of(ITEM_FORMULAS, FLUID_TOOLTIPS, MATERIAL_IDS,
             JEI_HIDE_REPLACED, JEI_HIDE_POURED);
 }
