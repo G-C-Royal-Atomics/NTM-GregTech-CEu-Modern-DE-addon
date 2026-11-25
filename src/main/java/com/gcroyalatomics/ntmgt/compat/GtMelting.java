@@ -46,6 +46,9 @@ public final class GtMelting {
             "refined_ore", new int[]{72, 0},
             "pure_dust", new int[]{72, 0});
     private static final int[] ORE_BLOCK = {144, 162};
+    /** Cable size -> rubber ingots of insulation (GT's WireRecipeHandler). */
+    private static final Map<String, Integer> CABLE_INSULATION = Map.of("cable_gt_single", 1, "cable_gt_double", 1,
+            "cable_gt_quadruple", 2, "cable_gt_octal", 3, "cable_gt_hex", 5);
 
     private GtMelting() {}
 
@@ -60,12 +63,13 @@ public final class GtMelting {
             int[] ore = oreAmounts(entry.tagPrefix());
             if (ore != null) return ore(entry.material(), ore);
             if (isOtherOreForm(entry.tagPrefix())) return List.of();
-            parts = List.of(ChemicalHelper.getMaterialStack(entry));
-        } else {
-            ItemMaterialInfo info = ItemMaterialData.getMaterialInfo(item);
-            if (info == null) return List.of();
-            parts = info.getMaterials();
         }
+        // GT's full recycling composition first (a cable: its wire's metal and the rubber insulation),
+        // else the item's own material (rod, gear, ...).
+        ItemMaterialInfo info = ItemMaterialData.getMaterialInfo(item);
+        if (info != null && !info.getMaterials().isEmpty()) parts = info.getMaterials();
+        else if (entry != null && entry.material() != null) parts = List.of(ChemicalHelper.getMaterialStack(entry));
+        else return List.of();
 
         List<Mats.MaterialStack> out = new ArrayList<>(parts.size() + 1);
         int slag = 0;
@@ -78,6 +82,7 @@ public final class GtMelting {
             else slag += quanta;
         }
         if (out.isEmpty()) return List.of(); // nothing in it melts
+        if (entry != null) slag += insulation(entry.tagPrefix());
         if (slag > 0) add(out, Mats.MAT_SLAG, slag);
         return out;
     }
@@ -91,6 +96,16 @@ public final class GtMelting {
         out.add(new Mats.MaterialStack(mat, amounts[0]));
         if (amounts[1] > 0) out.add(new Mats.MaterialStack(Mats.MAT_STONE, amounts[1]));
         return out;
+    }
+
+    /**
+     * A cable's insulation, in quanta: GT coats cables with rubber fluid (WireRecipeHandler.INSULATION_AMOUNT
+     * ingots of it per cable size) and does not count it in the cable's composition.
+     */
+    private static int insulation(TagPrefix prefix) {
+        ResourceLocation id = GTRegistries.TAG_PREFIXES.getKey(prefix);
+        int ingots = id == null ? 0 : CABLE_INSULATION.getOrDefault(id.getPath(), 0);
+        return ingots * MaterialShapes.INGOT.q(1);
     }
 
     private static void add(List<Mats.MaterialStack> out, NTMMaterial mat, int quanta) {

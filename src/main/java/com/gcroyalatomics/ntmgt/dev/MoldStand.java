@@ -274,6 +274,7 @@ public final class MoldStand {
             meltCheck("bronze_ingot", "bronze 72");
             meltCheck("stainless_steel_gear", "stainless_steel 288");
             meltCheck("copper_single_cable", "copper 36, slag 72");
+            meltHasSlag("lv_machine_hull", "steel ");
             meltCheck("rubber_ring", "");
             meltCheck("chalcopyrite_ore", "copper 144, stone 162");
             meltCheck("raw_chalcopyrite", "copper 96, stone 108");
@@ -306,6 +307,14 @@ public final class MoldStand {
                     "molten bronze cast in the GT gear mold: " + id(serverSlot(SMALL, 1)));
             reset(SMALL);
         }, 2);
+    }
+
+    /** Melts into the given metal plus slag for its unmeltable part (amounts are GT's recycling data). */
+    private static void meltHasSlag(String gtId, String metalPrefix) {
+        List<Mats.MaterialStack> melts = Mats.getSmeltingMaterialsFromItem(new ItemStack(gtItem(gtId)));
+        String got = String.join(", ", melts.stream().map(m -> m.material.tagPath + " " + m.amount).toList());
+        check(got.contains(metalPrefix) && melts.stream().anyMatch(m -> m.material == Mats.MAT_SLAG),
+                "crucible melts gtceu:" + gtId + " into [" + got + "] (" + metalPrefix.trim() + " and slag)");
     }
 
     private static void meltCheck(String gtId, String expected) {

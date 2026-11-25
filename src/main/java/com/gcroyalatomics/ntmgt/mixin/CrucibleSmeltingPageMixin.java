@@ -32,9 +32,10 @@ public abstract class CrucibleSmeltingPageMixin {
         for (Item item : BuiltInRegistries.ITEM) {
             var key = BuiltInRegistries.ITEM.getKey(item);
             if (!key.getNamespace().equals("gtceu") && !key.getNamespace().equals("ntmgt")) continue;
-            if (known.contains(item)) continue;
             List<Mats.MaterialStack> melts = GtMelting.of(new ItemStack(item));
             if (melts.isEmpty()) continue;
+            // as MatsMixin: NTM's own row stands unless GT's composition has slag in it
+            if (known.contains(item) && melts.stream().noneMatch(m -> m.material == Mats.MAT_SLAG)) continue;
             List<ItemStack> molten = new ArrayList<>(melts.size());
             for (Mats.MaterialStack m : melts) molten.add(ItemScraps.create(m, true));
             out.add(new CrucibleSmeltingPage.Recipe(PageIds.derived(page.id(), "ntmgt", PageIds.segment(key)),
